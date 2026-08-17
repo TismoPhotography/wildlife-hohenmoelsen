@@ -5,5 +5,19 @@
   "display": "standalone",
   "background_color": "#0f1712",
   "theme_color": "#1f3d2a",
-  "description": "Mobile Wildlife-Karte für Säugetiere, Brutvögel, Spots und Sichtungen rund um Hohenmölsen."
+  "description": "Mobile Wildlife-Karte für Säugetiere, Brutvögel, Spots und Sichtungen rund um Hohenmölsen.",
+  "icons": [
+    {
+      "src": "app-icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "app-icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
