@@ -212,29 +212,79 @@ async function loginEmail(){
 }
 async function googleLogin(){
   authMsg("Google-Anmeldung wird geöffnet…");
-  try{
-    const auth=firebase.auth();
-    const provider=new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({prompt:"select_account"});
-    const user=auth.currentUser;
 
-    let result;
-    if(user?.isAnonymous){
-      // Preserve the anonymous Firebase UID and attach Google to it.
-      result=await user.linkWithPopup(provider);
-      currentUser=result.user;
-      authMsg("Google-Konto erfolgreich verknüpft.","ok");
-    }else{
-      result=await auth.signInWithPopup(provider);
-      currentUser=result.user;
-      authMsg("Mit Google angemeldet.","ok");
+  try{
+    const nativeAuth=window.Capacitor?.Plugins?.FirebaseAuthentication;
+
+    // Android-App: nativen Google-Login verwenden
+    if(nativeAuth){
+      const result=await nativeAuth.signInWithGoogle({
+        skipNativeAuth:true
+      });
+
+      const idToken=result?.credential?.idToken;
+
+      if(!idToken){
+        throw new Error("Kein Google-ID-Token erhalten.");
+      }
+
+      const credential=firebase.auth.GoogleAuthProvider.credential(idToken);
+      const auth=firebase.auth();
+      const user=auth.currentUser;
+
+      if(user?.isAnonymous){
+        try{
+          const linked=await user.linkWithCredential(credential);
+          currentUser=linked.user;
+          authMsg("Google-Konto erfolgreich verknüpft.","ok");
+        }catch(linkErr){
+          if(
+            linkErr?.code==="auth/credential-already-in-use" ||
+            linkErr?.code==="auth/email-already-in-use"
+          ){
+            const signed=await auth.signInWithCredential(credential);
+            currentUser=signed.user;
+            authMsg("Mit Google angemeldet.","ok");
+          }else{
+            throw linkErr;
+          }
+        }
+      }else{
+        const signed=await auth.signInWithCredential(credential);
+        currentUser=signed.user;
+        authMsg("Mit Google angemeldet.","ok");
+      }
+    }
+
+    // Browser-Version: bisherigen Popup-Login verwenden
+    else{
+      const auth=firebase.auth();
+      const provider=new firebase.auth.GoogleAuthProvider();
+
+      provider.setCustomParameters({
+        prompt:"select_account"
+      });
+
+      const user=auth.currentUser;
+      let result;
+
+      if(user?.isAnonymous){
+        result=await user.linkWithPopup(provider);
+        currentUser=result.user;
+        authMsg("Google-Konto erfolgreich verknüpft.","ok");
+      }else{
+        result=await auth.signInWithPopup(provider);
+        currentUser=result.user;
+        authMsg("Mit Google angemeldet.","ok");
+      }
     }
 
     cloudReady=true;
     updateAuthUI();
     setCloudStatus("online","☁ Synchronisiert");
+
   }catch(err){
-    console.error(err);
+    console.error("Google Login Fehler:",err);
     authMsg(friendlyAuthError(err),"error");
   }
 }
