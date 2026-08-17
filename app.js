@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=9;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=10;
 
-const seed={schemaVersion:9,spots:[],sightings:[]};
+const seed={schemaVersion:10,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -250,7 +250,7 @@ qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:1
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v9-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v10-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
 qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();alert("Import erfolgreich.")}catch{alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}
@@ -344,5 +344,175 @@ qs("#nowBtn").addEventListener("click",()=>showPlanner("now"));
 qs("#speciesBtn").addEventListener("click",()=>showPlanner("species"));
 qs("#auditBtn").addEventListener("click",()=>showPlanner("audit"));
 qs("#closePlannerBtn").addEventListener("click",()=>qs("#plannerPanel").classList.add("hidden"));
+
+
+let liveConditions=null;
+let lastUserLocation=null;
+
+function degToCompass(deg){
+  const dirs=["N","NO","O","SO","S","SW","W","NW"];
+  return dirs[Math.round((Number(deg)||0)/45)%8];
+}
+function haversineKm(aLat,aLng,bLat,bLng){
+  const R=6371,toRad=x=>x*Math.PI/180;
+  const dLat=toRad(bLat-aLat),dLng=toRad(bLng-aLng);
+  const x=Math.sin(dLat/2)**2+Math.cos(toRad(aLat))*Math.cos(toRad(bLat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+function fmtDistance(km){
+  if(!Number.isFinite(km))return"";
+  return km<1?`${Math.round(km*1000)} m`:`${km.toFixed(1)} km`;
+}
+function sunPhase(nowIso,sunriseIso,sunsetIso){
+  if(!sunriseIso||!sunsetIso)return"unbekannt";
+  const now=new Date(nowIso),rise=new Date(sunriseIso),set=new Date(sunsetIso);
+  const dawnStart=new Date(rise.getTime()-45*60000),duskEnd=new Date(set.getTime()+45*60000);
+  if(now>=dawnStart&&now<=new Date(rise.getTime()+60*60000))return"Morgendämmerung";
+  if(now>=new Date(set.getTime()-60*60000)&&now<=duskEnd)return"Abenddämmerung";
+  if(now>rise&&now<set)return"Tag";
+  return"Nacht";
+}
+async function fetchLiveConditions(lat,lng){
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,is_day&daily=sunrise,sunset&timezone=auto&forecast_days=1`;
+  const res=await fetch(url,{cache:"no-store"});
+  if(!res.ok)throw new Error("Wetterdaten nicht verfügbar");
+  const j=await res.json();
+  return {
+    lat,lng,
+    time:j.current?.time||new Date().toISOString(),
+    temperature:j.current?.temperature_2m,
+    humidity:j.current?.relative_humidity_2m,
+    precipitation:j.current?.precipitation,
+    cloudCover:j.current?.cloud_cover,
+    windSpeed:j.current?.wind_speed_10m,
+    windDirection:j.current?.wind_direction_10m,
+    windGusts:j.current?.wind_gusts_10m,
+    weatherCode:j.current?.weather_code,
+    isDay:j.current?.is_day,
+    sunrise:j.daily?.sunrise?.[0]||"",
+    sunset:j.daily?.sunset?.[0]||"",
+    timezone:j.timezone||""
+  };
+}
+function weatherInfluence(profile,cond){
+  let delta=0,notes=[];
+  const wind=Number(cond.windSpeed||0),gust=Number(cond.windGusts||0),rain=Number(cond.precipitation||0),cloud=Number(cond.cloudCover||0);
+  if(profile.group==="mammal"){
+    if(wind<=15){delta+=6;notes.push("ruhiger Wind")}
+    else if(wind>30){delta-=12;notes.push("starker Wind")}
+    if(rain>2){delta-=12;notes.push("stärkerer Niederschlag")}
+    else if(rain>0){delta-=3;notes.push("leichter Niederschlag")}
+    if(cloud>=50&&cloud<=95){delta+=3}
+  }else{
+    if(profile.name==="Rotmilan"||profile.name==="Mäusebussard"){
+      if(wind>=8&&wind<=25){delta+=6;notes.push("brauchbarer Wind/Thermik")}
+      if(rain>1){delta-=14;notes.push("Regen ungünstig")}
+      if(gust>45){delta-=8;notes.push("starke Böen")}
+    }else{
+      if(rain>2){delta-=8;notes.push("stärkerer Niederschlag")}
+      if(wind>30){delta-=7;notes.push("starker Wind")}
+    }
+  }
+  return {delta,notes};
+}
+function timeInfluence(profile,cond){
+  const phase=sunPhase(cond.time,cond.sunrise,cond.sunset);
+  let delta=0;
+  if(profile.group==="mammal"){
+    if(phase==="Abenddämmerung"||phase==="Morgendämmerung")delta+=14;
+    else if(phase==="Nacht"&&(profile.name==="Fuchs"||profile.name==="Wildschwein"))delta+=10;
+    else if(phase==="Tag")delta-=4;
+  }else{
+    if(phase==="Tag")delta+=8;
+    if(phase==="Nacht")delta-=18;
+  }
+  return {delta,phase};
+}
+function enhancedProfileScore(spot,p,cond){
+  const hour=new Date(cond.time).getHours();
+  let base=profileScore(spot,p,hour);
+  const w=weatherInfluence(p,cond),t=timeInfluence(p,cond);
+  base=Math.max(5,Math.min(98,base+w.delta+t.delta));
+  return {score:base,weatherNotes:w.notes,phase:t.phase};
+}
+async function getConditionsForPlanner(){
+  if(lastUserLocation){
+    liveConditions=await fetchLiveConditions(lastUserLocation.lat,lastUserLocation.lng);
+    return liveConditions;
+  }
+  const c=map.getCenter();
+  liveConditions=await fetchLiveConditions(c.lat,c.lng);
+  return liveConditions;
+}
+function conditionClass(score){return score>=75?"condition-good":score>=55?"condition-mid":"condition-poor"}
+async function showWeatherPanel(){
+  const panel=qs("#weatherPanel"),content=qs("#weatherContent");
+  qs("#plannerPanel")?.classList.add("hidden");qs("#spotPanel").classList.add("hidden");
+  panel.classList.remove("hidden");
+  qs("#weatherTitle").textContent="Wetter & Sonnenstand";
+  content.innerHTML='<div class="plan-meta">Live-Daten werden geladen…</div>';
+  try{
+    const c=await getConditionsForPlanner(),phase=sunPhase(c.time,c.sunrise,c.sunset);
+    content.innerHTML=`
+      <div class="weather-strip">
+        <div class="weather-chip"><strong>${Math.round(c.temperature)}°C</strong><span>Temperatur</span></div>
+        <div class="weather-chip"><strong>${Math.round(c.windSpeed)} km/h</strong><span>Wind ${degToCompass(c.windDirection)}</span></div>
+        <div class="weather-chip"><strong>${Number(c.precipitation||0).toFixed(1)} mm</strong><span>Niederschlag</span></div>
+        <div class="weather-chip"><strong>${Math.round(c.cloudCover||0)}%</strong><span>Bewölkung</span></div>
+      </div>
+      <div class="sun-card">
+        <b>${phase}</b><br>
+        Sonnenaufgang: ${new Date(c.sunrise).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}<br>
+        Sonnenuntergang: ${new Date(c.sunset).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}<br>
+        Luftfeuchte: ${Math.round(c.humidity||0)}% · Böen: ${Math.round(c.windGusts||0)} km/h
+      </div>
+      <div class="weather-note">Wetterdaten: Open-Meteo. Die Wildlife-Bewertung ist ein heuristischer Planungsscore, keine garantierte Sichtungswahrscheinlichkeit.</div>`;
+  }catch(err){
+    content.innerHTML=`<div class="plan-card"><span class="condition-poor">Wetterdaten konnten nicht geladen werden.</span><div class="plan-meta">${esc(err.message)}</div></div>`;
+  }
+}
+async function showBestNow(){
+  const panel=qs("#plannerPanel"),content=qs("#plannerContent");
+  qs("#weatherPanel").classList.add("hidden");qs("#spotPanel").classList.add("hidden");
+  panel.classList.remove("hidden");
+  qs("#plannerKicker").textContent="Live-Wildlife-Planer";
+  qs("#plannerTitle").textContent="Beste Spots jetzt";
+  content.innerHTML='<div class="plan-meta">Wetter, Sonnenstand und Entfernungen werden berechnet…</div>';
+  try{
+    const cond=await getConditionsForPlanner();
+    const origin=lastUserLocation||{lat:map.getCenter().lat,lng:map.getCenter().lng};
+    let rows=[];
+    for(const s of data.spots){
+      const profiles=spotSpecies(s);
+      const pool=(profiles.length?profiles:SPECIES_PROFILES.filter(p=>p.habitats.includes(s.habitatCode)));
+      if(!pool.length)continue;
+      const scored=pool.map(p=>({p,...enhancedProfileScore(s,p,cond)})).sort((a,b)=>b.score-a.score).slice(0,3);
+      const dist=haversineKm(origin.lat,origin.lng,s.lat,s.lng);
+      const distancePenalty=Math.min(12,dist*1.5);
+      const best=Math.max(5,Math.round(scored[0].score-distancePenalty));
+      rows.push({s,scored,best,dist});
+    }
+    rows.sort((a,b)=>b.best-a.best||a.dist-b.dist);
+    content.innerHTML=rows.slice(0,8).map(r=>{
+      const best=r.scored[0],cls=conditionClass(r.best);
+      const note=[best.phase,...best.weatherNotes].filter(Boolean).join(" · ");
+      return `<div class="plan-card">
+        <div class="plan-head"><strong>${esc(r.s.id)} · ${esc(r.s.name)}</strong><span class="plan-score ${cls}">${r.best}%</span></div>
+        <div class="plan-species">${r.scored.map(x=>`${x.p.icon} ${x.p.name} ${Math.round(x.score)}%`).join(" · ")}</div>
+        <div class="plan-meta">${esc(note||"Habitat-/Zeitmodell")} <span class="distance-badge">${fmtDistance(r.dist)}</span></div>
+      </div>`;
+    }).join("")||'<div class="plan-meta">Noch nicht genug Daten für eine Bewertung.</div>';
+  }catch(err){
+    content.innerHTML=`<div class="plan-card"><span class="condition-poor">Live-Bewertung nicht verfügbar.</span><div class="plan-meta">${esc(err.message)}</div></div>`;
+  }
+}
+qs("#bestNowBtn").addEventListener("click",showBestNow);
+qs("#weatherBtn").addEventListener("click",showWeatherPanel);
+qs("#closeWeatherBtn").addEventListener("click",()=>qs("#weatherPanel").classList.add("hidden"));
+
+// Remember user location for distance calculations and live local weather.
+map.on("locationfound",e=>{
+  lastUserLocation={lat:e.latlng.lat,lng:e.latlng.lng};
+});
 
 updateSpotSelect();renderMarkers();setTimeout(refreshMapSize,80);

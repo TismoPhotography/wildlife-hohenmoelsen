@@ -118,3 +118,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 @media(max-width:520px){
   .dialog-actions{grid-template-columns:1fr}
 }
+
+.weather-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.weather-chip{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
+.weather-chip strong{display:block;font-size:14px}
+.weather-chip span{font-size:10px;color:var(--muted)}
+.distance-badge{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#294332;color:#d9eadc;font-size:10px}
+.condition-good{color:#bce7c4}.condition-mid{color:#f2d69a}.condition-poor{color:#e8a7a7}
+.sun-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12px;line-height:1.45}
+.weather-note{font-size:10px;color:var(--muted);line-height:1.35;margin-top:6px}

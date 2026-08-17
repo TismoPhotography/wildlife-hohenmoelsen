@@ -8,12 +8,12 @@
   <title>Wildlife Hohenmölsen</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <div class="eyebrow">Wildlife Hohenmölsen · v9</div>
+      <div class="eyebrow">Wildlife Hohenmölsen · v10</div>
       <h1>Säugetiere & Brutvögel</h1>
     </div>
     <button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button>
@@ -33,7 +33,7 @@
       <div class="action-scroll">
         <button id="addSpotBtn" class="primary">+ Spot</button>
         <button id="addSightingBtn">+ Sichtung</button>
-        <button id="nowBtn">⏱ Jetzt</button><button id="speciesBtn">🦌 Arten</button><button id="auditBtn">✓ Prüfung</button><button id="exportBtn">Export</button>
+        <button id="nowBtn">⏱ Jetzt</button><button id="speciesBtn">🦌 Arten</button><button id="auditBtn">✓ Prüfung</button><button id="bestNowBtn">🌤 Beste Spots jetzt</button><button id="weatherBtn">☁ Wetter</button><button id="exportBtn">Export</button>
         <label class="file-btn">Import<input id="importInput" type="file" accept="application/json" hidden></label>
       </div>
     </section>
@@ -46,6 +46,14 @@
       <button id="cancelPickBtn">Abbrechen</button>
     </div>
 
+
+
+    <aside id="weatherPanel" class="planner-panel hidden">
+      <button id="closeWeatherBtn" class="panel-close">×</button>
+      <div class="spot-kicker">Live-Bedingungen</div>
+      <h2 id="weatherTitle">Wetter & Sonnenstand</h2>
+      <div id="weatherContent" class="planner-content"></div>
+    </aside>
 
     <aside id="plannerPanel" class="planner-panel hidden">
       <button id="closePlannerBtn" class="panel-close">×</button>
@@ -244,6 +252,6 @@
   </template>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
