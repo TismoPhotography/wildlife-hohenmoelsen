@@ -54,11 +54,13 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > ~/.config/.android/debug.keystore
           chmod 600 ~/.config/.android/debug.keystore
 
-      - name: SHA-1 anzeigen
+            - name: SHA-1 des festen Keystores pruefen
         run: |
-          chmod +x android/gradlew
-          cd android
-          ./gradlew signingReport
+          keytool -list \
+            -v \
+            -keystore ~/.config/.android/debug.keystore \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -alias androiddebugkey
 
       - name: Web-Dateien synchronisieren
         run: npx cap sync android
