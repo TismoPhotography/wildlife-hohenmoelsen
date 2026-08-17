@@ -1,1 +1,37 @@
+name: Stable Android Debug Key
 
+on:
+  workflow_dispatch:
+
+jobs:
+  create-key:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Debug-Keystore erzeugen
+        run: |
+          keytool -genkeypair \
+            -v \
+            -keystore wildlife-debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Wildlife Hohenmoelsen,O=TismoPhotography,C=DE"
+
+      - name: SHA-1 anzeigen
+        run: |
+          keytool -list \
+            -v \
+            -keystore wildlife-debug.keystore \
+            -storepass android \
+            -alias androiddebugkey
+
+      - name: Keystore bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildlife-android-keystore
+          path: wildlife-debug.keystore
+          retention-days: 90
