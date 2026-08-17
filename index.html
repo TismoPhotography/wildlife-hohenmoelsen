@@ -8,12 +8,12 @@
   <title>Wildlife Hohenmölsen</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=12fix2">
+  <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <div class="eyebrow">Wildlife Hohenmölsen · v12</div>
+      <div class="eyebrow">Wildlife Hohenmölsen · v14</div>
       <h1>Säugetiere & Brutvögel</h1>
     </div>
     <div class="top-actions"><button id="accountBtn" class="account-btn" title="Konto">👤 Gast</button><button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button></div>
@@ -70,8 +70,8 @@
       <div id="panelContent" class="panel-content"></div>
     </aside>
 
-    <section class="bottom-sheet">
-      <div class="sheet-handle"></div>
+    <section class="bottom-sheet collapsed">
+      <div class="sheet-handle" role="button" tabindex="0" aria-expanded="false" aria-label="Letzte Sichtungen ein- oder ausklappen"></div>
       <div class="stats">
         <div><strong id="spotCount">0</strong><span>Spots</span></div>
         <div><strong id="confirmedCount">0</strong><span>bestätigt</span></div>
@@ -277,6 +277,30 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="app.js?v=12fix2"></script>
+  <script src="app.js?v=14"></script>
+
+  <script>
+    (() => {
+      const sheet = document.querySelector(".bottom-sheet");
+      const toggle = document.querySelector(".sheet-handle");
+      if (!sheet || !toggle) return;
+
+      const setExpanded = (expanded) => {
+        sheet.classList.toggle("expanded", expanded);
+        sheet.classList.toggle("collapsed", !expanded);
+        toggle.setAttribute("aria-expanded", String(expanded));
+        setTimeout(() => window.dispatchEvent(new Event("resize")), 120);
+      };
+
+      const flip = () => setExpanded(!sheet.classList.contains("expanded"));
+      toggle.addEventListener("click", flip);
+      toggle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          flip();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

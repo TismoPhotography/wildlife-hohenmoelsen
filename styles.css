@@ -145,3 +145,171 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 .danger-btn{width:100%;margin-top:10px!important;background:#4b2828!important;border-color:#704040!important;color:#ffdede!important}
 .auth-hint{font-size:10px;color:var(--muted);line-height:1.4;margin:12px 0 0}
 @media(max-width:520px){.account-btn{max-width:112px}.auth-actions{grid-template-columns:1fr}}
+
+
+/* v14: kompakte, einklappbare Sichtungsleiste + aufgeräumter Mobile-Header */
+.topbar{
+  align-items:flex-start;
+  gap:10px;
+  padding-left:12px;
+  padding-right:12px;
+  padding-bottom:20px;
+}
+.topbar>div:first-child{
+  min-width:0;
+  flex:1;
+  padding-top:1px;
+}
+.topbar h1{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.top-actions{
+  flex:0 0 auto;
+  max-width:46vw;
+}
+.account-btn{
+  max-width:34vw;
+}
+.toolbar{
+  top:calc(76px + env(safe-area-inset-top));
+}
+
+.bottom-sheet{
+  max-height:42vh;
+  overflow:hidden;
+  padding:6px 10px 10px;
+  transition:max-height .22s ease,transform .22s ease,padding .22s ease;
+}
+.sheet-handle{
+  width:100%;
+  height:32px;
+  margin:0 0 6px;
+  background:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border-radius:12px;
+  cursor:pointer;
+  user-select:none;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.02em;
+}
+.sheet-handle:before{
+  content:"";
+  width:42px;
+  height:4px;
+  border-radius:999px;
+  background:#586b5d;
+}
+.sheet-handle:after{
+  content:"Letzte Sichtungen ⌄";
+  white-space:nowrap;
+}
+.bottom-sheet.expanded .sheet-handle:after{
+  content:"Letzte Sichtungen ⌃";
+}
+.bottom-sheet.collapsed .activity-list{
+  display:none;
+}
+.bottom-sheet.collapsed{
+  max-height:118px;
+}
+.bottom-sheet.collapsed .stats{
+  margin-bottom:0;
+}
+.bottom-sheet.collapsed .stats div{
+  padding:6px 4px;
+}
+.bottom-sheet.collapsed .stats strong{
+  font-size:15px;
+}
+.bottom-sheet.collapsed .stats span{
+  font-size:9px;
+}
+.bottom-sheet.expanded{
+  max-height:42vh;
+  overflow:auto;
+}
+
+.leaflet-bottom.leaflet-left{
+  bottom:138px;
+}
+body:has(.bottom-sheet.expanded) .leaflet-bottom.leaflet-left{
+  bottom:calc(42vh + 22px);
+}
+
+@media(max-width:520px){
+  .topbar{
+    padding-top:calc(8px + env(safe-area-inset-top));
+    padding-bottom:18px;
+  }
+  .eyebrow{
+    font-size:9px;
+    letter-spacing:.06em;
+  }
+  h1{
+    font-size:16px;
+    max-width:54vw;
+  }
+  .top-actions{
+    gap:5px;
+    max-width:43vw;
+  }
+  .account-btn{
+    height:38px;
+    max-width:29vw;
+    padding:0 8px;
+    font-size:10px;
+    border-radius:12px;
+  }
+  .icon-btn{
+    width:38px;
+    height:38px;
+    border-radius:12px;
+  }
+  .toolbar{
+    top:calc(70px + env(safe-area-inset-top));
+    left:8px;
+    right:8px;
+    gap:5px;
+  }
+  .toolbar button,.file-btn{
+    padding:7px 10px;
+    font-size:11px;
+  }
+  .cloud-status{
+    padding:7px 9px;
+    font-size:10px;
+  }
+  .bottom-sheet{
+    left:8px;
+    right:8px;
+    bottom:calc(8px + env(safe-area-inset-bottom));
+    border-radius:18px;
+  }
+  .bottom-sheet.collapsed{
+    max-height:108px;
+  }
+  .sheet-handle{
+    height:27px;
+    margin-bottom:4px;
+  }
+  .stats{
+    gap:4px;
+  }
+  .stats div{
+    border-radius:10px;
+  }
+  .leaflet-bottom.leaflet-left{
+    bottom:126px;
+    left:8px;
+  }
+  body:has(.bottom-sheet.expanded) .leaflet-bottom.leaflet-left{
+    bottom:calc(42vh + 18px);
+  }
+}
