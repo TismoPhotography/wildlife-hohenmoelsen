@@ -46,6 +46,20 @@ jobs:
       - name: Android-Projekt erzeugen
         run: npx cap add android
 
+      - name: Debug-Keystore erzeugen
+        run: |
+          mkdir -p ~/.android
+          keytool -genkeypair \
+            -v \
+            -keystore ~/.android/debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
       - name: SHA-1 anzeigen
         run: |
           chmod +x android/gradlew
