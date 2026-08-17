@@ -1,7 +1,7 @@
 name: Stable Android Debug Key
 
-on:
-  workflow_dispatch:
+"on":
+  workflow_dispatch: {}
 
 jobs:
   create-key:
