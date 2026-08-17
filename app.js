@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=11;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=12;
 
-const seed={schemaVersion:11,spots:[],sightings:[]};
+const seed={schemaVersion:12,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -115,6 +115,7 @@ async function initFirebase(){
     await firebase.auth().signInAnonymously();
     currentUser=firebase.auth().currentUser;
     if(!currentUser)throw new Error("Keine Firebase-Benutzer-ID");
+    updateAuthUI();
     cloudReady=true;
     setCloudStatus("syncing","☁ Erster Sync…");
 
@@ -132,6 +133,103 @@ async function initFirebase(){
   }
 }
 
+
+
+function displayUserLabel(user){
+  if(!user)return"👤 Offline";
+  if(user.isAnonymous)return"👤 Gast";
+  return `👤 ${user.displayName||user.email||"Konto"}`;
+}
+function updateAuthUI(){
+  const user=(window.firebase&&firebase.auth)?firebase.auth().currentUser:currentUser;
+  const btn=document.querySelector("#accountBtn");
+  if(btn){btn.textContent=displayUserLabel(user);btn.title=user?.email||user?.displayName||"Benutzerkonto"}
+  const current=document.querySelector("#authCurrent"),logout=document.querySelector("#logoutBtn");
+  if(current){
+    if(!user)current.textContent="Nicht angemeldet.";
+    else if(user.isAnonymous)current.textContent="Du verwendest die App aktuell als Gast.";
+    else current.textContent=`Angemeldet als ${user.displayName||user.email||user.uid}`;
+  }
+  if(logout)logout.classList.toggle("hidden",!user||user.isAnonymous);
+}
+function authMsg(text,type=""){
+  const el=document.querySelector("#authMessage");if(!el)return;
+  el.textContent=text||"";el.className=`auth-message ${type}`;
+}
+function friendlyAuthError(err){
+  const m={
+    "auth/email-already-in-use":"Diese E-Mail-Adresse wird bereits verwendet.",
+    "auth/invalid-email":"Die E-Mail-Adresse ist ungültig.",
+    "auth/weak-password":"Das Passwort ist zu schwach. Mindestens 6 Zeichen verwenden.",
+    "auth/invalid-credential":"E-Mail oder Passwort ist falsch.",
+    "auth/wrong-password":"E-Mail oder Passwort ist falsch.",
+    "auth/user-not-found":"Für diese E-Mail wurde kein Konto gefunden.",
+    "auth/popup-closed-by-user":"Google-Anmeldung wurde abgebrochen.",
+    "auth/account-exists-with-different-credential":"Für diese E-Mail existiert bereits eine andere Anmeldemethode.",
+    "auth/credential-already-in-use":"Dieses Konto ist bereits mit einem anderen Benutzer verknüpft."
+  };
+  return m[err?.code]||err?.message||"Anmeldung fehlgeschlagen.";
+}
+async function registerEmail(){
+  const email=document.querySelector("#authEmail").value.trim(),password=document.querySelector("#authPassword").value;
+  if(!email||!password){authMsg("Bitte E-Mail und Passwort eingeben.","error");return}
+  authMsg("Konto wird erstellt…");
+  try{
+    const auth=firebase.auth(),user=auth.currentUser;
+    if(user?.isAnonymous){
+      await user.linkWithCredential(firebase.auth.EmailAuthProvider.credential(email,password));
+    }else if(!user){
+      await auth.createUserWithEmailAndPassword(email,password);
+    }else{
+      authMsg("Du bist bereits mit einem Konto angemeldet.","error");return;
+    }
+    currentUser=auth.currentUser;updateAuthUI();authMsg("Konto erstellt und angemeldet.","ok");
+  }catch(err){console.error(err);authMsg(friendlyAuthError(err),"error")}
+}
+async function loginEmail(){
+  const email=document.querySelector("#authEmail").value.trim(),password=document.querySelector("#authPassword").value;
+  if(!email||!password){authMsg("Bitte E-Mail und Passwort eingeben.","error");return}
+  authMsg("Anmeldung läuft…");
+  try{
+    await firebase.auth().signInWithEmailAndPassword(email,password);
+    currentUser=firebase.auth().currentUser;updateAuthUI();authMsg("Erfolgreich angemeldet.","ok");
+  }catch(err){console.error(err);authMsg(friendlyAuthError(err),"error")}
+}
+async function googleLogin(){
+  authMsg("Google-Anmeldung wird geöffnet…");
+  try{
+    const auth=firebase.auth(),provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:"select_account"});
+    const user=auth.currentUser,isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(user?.isAnonymous){
+      if(isMobile)await user.linkWithRedirect(provider);
+      else{await user.linkWithPopup(provider);currentUser=auth.currentUser;updateAuthUI();authMsg("Google-Konto verknüpft.","ok")}
+    }else{
+      if(isMobile)await auth.signInWithRedirect(provider);
+      else{await auth.signInWithPopup(provider);currentUser=auth.currentUser;updateAuthUI();authMsg("Mit Google angemeldet.","ok")}
+    }
+  }catch(err){console.error(err);authMsg(friendlyAuthError(err),"error")}
+}
+async function logoutUser(){
+  authMsg("Abmeldung…");
+  try{
+    await firebase.auth().signOut();
+    currentUser=null;cloudReady=false;
+    await firebase.auth().signInAnonymously();
+    currentUser=firebase.auth().currentUser;cloudReady=true;updateAuthUI();
+    setCloudStatus("online","☁ Synchronisiert");
+    authMsg("Abgemeldet. Du nutzt die App wieder als Gast.","ok");
+  }catch(err){console.error(err);authMsg(friendlyAuthError(err),"error")}
+}
+function initAuthUiHandlers(){
+  const dialog=document.querySelector("#authDialog");
+  document.querySelector("#accountBtn")?.addEventListener("click",()=>{authMsg("");updateAuthUI();dialog.showModal()});
+  document.querySelector("#closeAuthBtn")?.addEventListener("click",()=>dialog.close());
+  document.querySelector("#emailRegisterBtn")?.addEventListener("click",registerEmail);
+  document.querySelector("#emailLoginBtn")?.addEventListener("click",loginEmail);
+  document.querySelector("#googleAuthBtn")?.addEventListener("click",googleLogin);
+  document.querySelector("#logoutBtn")?.addEventListener("click",logoutUser);
+}
 
 const map=L.map("map",{zoomControl:true,preferCanvas:true,fadeAnimation:false}).setView([51.135,12.125],14);
 
@@ -341,7 +439,7 @@ qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:1
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v11-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v12-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
 qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();if(cloudReady){setCloudStatus("syncing","☁ Import-Sync…");await uploadAllToCloud()}alert("Import erfolgreich – Daten wurden mit der Cloud zusammengeführt.")}catch(err){console.error(err);alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}
@@ -606,4 +704,11 @@ map.on("locationfound",e=>{
   lastUserLocation={lat:e.latlng.lat,lng:e.latlng.lng};
 });
 
-updateSpotSelect();renderMarkers();setTimeout(refreshMapSize,80);initFirebase();
+updateSpotSelect();renderMarkers();setTimeout(refreshMapSize,80);
+initAuthUiHandlers();
+if(window.firebase){
+  firebase.auth().getRedirectResult().then(result=>{
+    if(result?.user){currentUser=result.user;updateAuthUI();authMsg("Anmeldung erfolgreich.","ok")}
+  }).catch(err=>{console.error(err);authMsg(friendlyAuthError(err),"error")});
+}
+initFirebase();

@@ -8,15 +8,15 @@
   <title>Wildlife Hohenmölsen</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=11fix2">
+  <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <div class="eyebrow">Wildlife Hohenmölsen · v11</div>
+      <div class="eyebrow">Wildlife Hohenmölsen · v12</div>
       <h1>Säugetiere & Brutvögel</h1>
     </div>
-    <button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button>
+    <div class="top-actions"><button id="accountBtn" class="account-btn" title="Konto">👤 Gast</button><button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button></div>
   </header>
 
   <main>
@@ -81,6 +81,28 @@
       <div id="activityList" class="activity-list"></div>
     </section>
   </main>
+
+
+  <dialog id="authDialog">
+    <div class="form-card auth-card">
+      <div class="dialog-head">
+        <div><div class="eyebrow">Benutzerkonto</div><h2>Anmelden</h2></div>
+        <button type="button" id="closeAuthBtn" class="close-btn" aria-label="Schließen">×</button>
+      </div>
+      <div id="authCurrent" class="auth-current"></div>
+      <button type="button" id="googleAuthBtn" class="google-btn">G Mit Google anmelden</button>
+      <div class="auth-divider"><span>oder</span></div>
+      <label>E-Mail<input id="authEmail" type="email" autocomplete="email" placeholder="name@beispiel.de"></label>
+      <label>Passwort<input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="mindestens 6 Zeichen"></label>
+      <div class="auth-actions">
+        <button type="button" id="emailLoginBtn" class="primary">Einloggen</button>
+        <button type="button" id="emailRegisterBtn">Registrieren</button>
+      </div>
+      <div id="authMessage" class="auth-message"></div>
+      <button type="button" id="logoutBtn" class="danger-btn hidden">Ausloggen</button>
+      <p class="auth-hint">Als Gast bleibt die App nutzbar. Beim Registrieren wird das anonyme Firebase-Konto nach Möglichkeit mit deinem neuen Konto verknüpft.</p>
+    </div>
+  </dialog>
 
   <dialog id="spotDialog">
     <form method="dialog" id="spotForm" class="form-card">
@@ -255,6 +277,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="app.js?v=11fix2"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
