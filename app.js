@@ -109,23 +109,49 @@ function subscribeCloud(){
 }
 async function initFirebase(){
   try{
-    firebase.initializeApp(firebaseConfig);
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     db=firebase.firestore();
     setCloudStatus("syncing","☁ Anmeldung…");
-    await firebase.auth().signInAnonymously();
+
+    // Finish a possible Google redirect only AFTER Firebase has been initialized.
+    try{
+      const redirectResult=await firebase.auth().getRedirectResult();
+      if(redirectResult?.user){
+        currentUser=redirectResult.user;
+        authMsg("Anmeldung erfolgreich.","ok");
+      }
+    }catch(redirectErr){
+      console.error("Redirect login failed",redirectErr);
+      authMsg(friendlyAuthError(redirectErr),"error");
+    }
+
+    // Keep an existing Google/E-mail session. Only create an anonymous
+    // account when there is no persisted user at all.
     currentUser=firebase.auth().currentUser;
+    if(!currentUser){
+      await firebase.auth().signInAnonymously();
+      currentUser=firebase.auth().currentUser;
+    }
     if(!currentUser)throw new Error("Keine Firebase-Benutzer-ID");
+
     updateAuthUI();
     cloudReady=true;
     setCloudStatus("syncing","☁ Erster Sync…");
 
-    // One-time migration: this browser's v10 local data is merged into Firestore.
     const migrationKey="wildlife-v11-cloud-migrated";
     if(localStorage.getItem(migrationKey)!=="yes"){
       await uploadAllToCloud();
       localStorage.setItem(migrationKey,"yes");
     }
     subscribeCloud();
+
+    // Keep UI/state current after login changes.
+    firebase.auth().onAuthStateChanged(user=>{
+      if(!user)return;
+      currentUser=user;
+      cloudReady=true;
+      updateAuthUI();
+    });
   }catch(err){
     console.error("Firebase init failed",err);
     cloudReady=false;
@@ -706,9 +732,4 @@ map.on("locationfound",e=>{
 
 updateSpotSelect();renderMarkers();setTimeout(refreshMapSize,80);
 initAuthUiHandlers();
-if(window.firebase){
-  firebase.auth().getRedirectResult().then(result=>{
-    if(result?.user){currentUser=result.user;updateAuthUI();authMsg("Anmeldung erfolgreich.","ok")}
-  }).catch(err=>{console.error(err);authMsg(friendlyAuthError(err),"error")});
-}
 initFirebase();
