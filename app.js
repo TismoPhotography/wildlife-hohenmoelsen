@@ -239,7 +239,7 @@ function updateSpotSelect(){
   if([...select.options].some(o=>o.value===current))select.value=current
 }
 function nextSpotId(){const u=(currentUser?.uid||"local").slice(0,4).toUpperCase();return`WHM-${Date.now().toString(36).toUpperCase()}-${u}`}
-function nextSightingId(){const u=(currentUser?.uid||"local").slice(0,4).toUpperCase();return`S-${Date.now().toString(36).toUpperCase()}-${u}`}`}
+function nextSightingId(){const u=(currentUser?.uid||"local").slice(0,4).toUpperCase();return`S-${Date.now().toString(36).toUpperCase()}-${u}`}
 
 const spotDialog=qs("#spotDialog"),sightingDialog=qs("#sightingDialog");
 
