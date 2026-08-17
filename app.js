@@ -1,33 +1,29 @@
 const STORAGE_KEY = "wildlife-hohenmoelsen-v1";
 
 const seed = {
-  spots: [
-    {
-      id: "WHM-001",
-      name: "Hochsitz westlich Mondsee",
-      type: "Hochsitz",
-      lat: 51.130541,
-      lng: 12.120998,
-      habitat: "Wald-Feld-Kante / Sukzessionslandschaft",
-      mammals: ["Reh"],
-      birds: [],
-      notes: "Bestätigter Wildlife-Spot. Rehwild mehrfach beobachtet.",
-      status: "bestätigt"
-    }
-  ],
-  sightings: [
-    {
-      id: "S-0001",
-      spotId: "WHM-001",
-      group: "mammal",
-      species: "Reh",
-      count: 4,
-      date: "2026-08-16",
-      time: "19:45–20:15",
-      behavior: "Äsen / Fressen",
-      notes: "Vier Rehe innerhalb von 20 Minuten. Ein Reh kam bis ca. 3 m an den Hochsitz."
-    }
-  ]
+  spots: [{
+    id: "WHM-001",
+    name: "Hochsitz westlich Mondsee",
+    type: "Hochsitz",
+    lat: 51.130541,
+    lng: 12.120998,
+    habitat: "Wald-Feld-Kante / Sukzessionslandschaft",
+    mammals: ["Reh"],
+    birds: [],
+    notes: "Bestätigter Wildlife-Spot. Rehwild mehrfach beobachtet.",
+    status: "bestätigt"
+  }],
+  sightings: [{
+    id: "S-0001",
+    spotId: "WHM-001",
+    group: "mammal",
+    species: "Reh",
+    count: 4,
+    date: "2026-08-16",
+    time: "19:45–20:15",
+    behavior: "Äsen / Fressen",
+    notes: "Vier Rehe innerhalb von 20 Minuten. Ein Reh kam bis ca. 3 m an den Hochsitz."
+  }]
 };
 
 function loadData(){
@@ -44,30 +40,42 @@ let data = loadData();
 let currentFilter = "all";
 let markerRecords = [];
 
-const map = L.map("map", {zoomControl:true}).setView([51.130541,12.120998], 15);
+const map = L.map("map", {
+  zoomControl: true,
+  preferCanvas: true,
+  fadeAnimation: false,
+  zoomAnimation: true
+}).setView([51.130541, 12.120998], 15);
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors',
-  updateWhenIdle: false,
-  keepBuffer: 6,
-  crossOrigin: true
-}).addTo(map);
+// Primary map: CARTO Voyager, built from OpenStreetMap data.
+// This avoids the incomplete tile loading seen on some mobile browsers.
+const carto = L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+  {
+    subdomains: "abcd",
+    maxZoom: 20,
+    detectRetina: true,
+    updateWhenIdle: false,
+    updateWhenZooming: true,
+    keepBuffer: 8,
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+  }
+).addTo(map);
 
 function refreshMapSize(){
-  requestAnimationFrame(() => map.invalidateSize({pan:false, debounceMoveend:true}));
+  requestAnimationFrame(() => {
+    map.invalidateSize({pan:false, debounceMoveend:true});
+  });
 }
-window.addEventListener("load", ()=>{
+
+window.addEventListener("load", () => {
   refreshMapSize();
-  setTimeout(refreshMapSize, 250);
-  setTimeout(refreshMapSize, 1000);
+  setTimeout(refreshMapSize, 200);
+  setTimeout(refreshMapSize, 700);
 });
 window.addEventListener("resize", refreshMapSize);
-window.addEventListener("orientationchange", ()=>{
-  setTimeout(refreshMapSize, 250);
-  setTimeout(refreshMapSize, 800);
-});
-document.addEventListener("visibilitychange", ()=>{
+window.addEventListener("orientationchange", () => setTimeout(refreshMapSize, 300));
+document.addEventListener("visibilitychange", () => {
   if(!document.hidden) setTimeout(refreshMapSize, 150);
 });
 
@@ -81,7 +89,8 @@ function iconFor(kind){
 }
 
 function popupForSpot(spot){
-  const last = data.sightings.filter(s=>s.spotId===spot.id).sort((a,b)=>(b.date||"").localeCompare(a.date||""))[0];
+  const last = data.sightings.filter(s=>s.spotId===spot.id)
+    .sort((a,b)=>(b.date||"").localeCompare(a.date||""))[0];
   return `
     <div class="popup">
       <h3>${escapeHtml(spot.name)}</h3>
@@ -146,7 +155,6 @@ function renderActivity(){
   const list = document.querySelector("#activityList");
   list.innerHTML = "";
   const tpl = document.querySelector("#activityItemTemplate");
-
   const sorted = [...data.sightings].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,6);
   if(!sorted.length){
     list.innerHTML = '<div class="activity-meta">Noch keine Sichtungen eingetragen.</div>';
@@ -188,6 +196,7 @@ document.querySelectorAll(".filter").forEach(btn=>{
 
 const spotDialog = document.querySelector("#spotDialog");
 const sightingDialog = document.querySelector("#sightingDialog");
+
 document.querySelector("#addSpotBtn").addEventListener("click", ()=>{
   const c = map.getCenter();
   const form = document.querySelector("#spotForm");
@@ -196,6 +205,7 @@ document.querySelector("#addSpotBtn").addEventListener("click", ()=>{
   form.elements.lng.value = c.lng.toFixed(6);
   spotDialog.showModal();
 });
+
 document.querySelector("#addSightingBtn").addEventListener("click", ()=>{
   updateSpotSelect();
   const form = document.querySelector("#sightingForm");
@@ -203,6 +213,7 @@ document.querySelector("#addSightingBtn").addEventListener("click", ()=>{
   form.elements.date.value = new Date().toISOString().slice(0,10);
   sightingDialog.showModal();
 });
+
 document.querySelector("#useMapCenterBtn").addEventListener("click", ()=>{
   const c = map.getCenter();
   const form = document.querySelector("#spotForm");
@@ -265,7 +276,7 @@ document.querySelector("#locateBtn").addEventListener("click", ()=>{
 map.on("locationfound", e=>{
   L.circleMarker(e.latlng,{radius:8}).addTo(map).bindPopup("Dein Standort").openPopup();
 });
-map.on("locationerror", ()=> alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
+map.on("locationerror", ()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
 document.querySelector("#exportBtn").addEventListener("click", ()=>{
   const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
@@ -300,10 +311,9 @@ function escapeHtml(v){
   }[c]));
 }
 
-if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=2").catch(()=>{});
-}
+// v4: deliberately no service worker registration.
+// This eliminates stale cached HTML/JS while we stabilize the mobile map.
 
 updateSpotSelect();
 renderMarkers();
-setTimeout(refreshMapSize, 50);
+setTimeout(refreshMapSize, 80);
