@@ -8,12 +8,12 @@
   <title>Wildlife Hohenmölsen</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <div class="eyebrow">Wildlife Hohenmölsen · v5</div>
+      <div class="eyebrow">Wildlife Hohenmölsen · v7</div>
       <h1>Säugetiere & Brutvögel</h1>
     </div>
     <button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button>
@@ -39,6 +39,12 @@
     </section>
 
     <section id="map"></section>
+
+    <div id="pickBanner" class="pick-banner hidden">
+      <strong id="pickBannerTitle">Punkt wählen</strong>
+      <span id="pickBannerText">Tippe auf die gewünschte Stelle in der Karte.</span>
+      <button id="cancelPickBtn">Abbrechen</button>
+    </div>
 
     <aside id="spotPanel" class="spot-panel hidden">
       <button id="closePanelBtn" class="panel-close">×</button>
@@ -67,6 +73,9 @@
         <button value="cancel" class="close-btn">×</button>
       </div>
 
+      <button type="button" id="pickSpotOnMapBtn" class="map-pick-btn">📍 Punkt auf Karte auswählen</button>
+      <div id="spotCoordStatus" class="coord-status">Noch kein Kartenpunkt ausgewählt.</div>
+
       <div class="form-section-title">Grunddaten</div>
       <label>Name<input name="name" required placeholder="z. B. Hochsitz Nordfeld"></label>
       <div class="two-col">
@@ -91,7 +100,6 @@
         <label>Breitengrad<input name="lat" required inputmode="decimal"></label>
         <label>Längengrad<input name="lng" required inputmode="decimal"></label>
       </div>
-      <button type="button" id="useMapCenterBtn" class="secondary">Kartenmitte übernehmen</button>
 
       <div class="form-section-title">Lebensraum</div>
       <label>Habitat-Code
@@ -107,8 +115,7 @@
           <option value="AB">AB · Ansitzbaum / Pfahl</option>
         </select>
       </label>
-      <label>Vegetation / Struktur<textarea name="vegetation" rows="3" placeholder="z. B. dichter Waldsaum, Wiese, junge Sukzession, Schilf..."></textarea></label>
-
+      <label>Vegetation / Struktur<textarea name="vegetation" rows="3"></textarea></label>
       <div class="two-col">
         <label>Wasserquelle
           <select name="waterSource">
@@ -120,15 +127,15 @@
             <option value="Feuchtfläche">Feuchtfläche</option>
           </select>
         </label>
-        <label>Entfernung Wasser (m)<input name="waterDistance" type="number" min="0" step="10" placeholder="z. B. 250"></label>
+        <label>Entfernung Wasser (m)<input name="waterDistance" type="number" min="0" step="10"></label>
       </div>
 
       <div class="form-section-title">Tierpotenzial</div>
-      <label>Potenzielle Säugetiere<textarea name="mammals" rows="2" placeholder="Reh, Fuchs, Feldhase, Wildschwein..."></textarea></label>
-      <label>Potenzielle Brutvögel<textarea name="birds" rows="2" placeholder="Rotmilan, Mäusebussard, Spechte..."></textarea></label>
+      <label>Potenzielle Säugetiere<textarea name="mammals" rows="2"></textarea></label>
+      <label>Potenzielle Brutvögel<textarea name="birds" rows="2"></textarea></label>
       <div class="two-col">
         <label>Säugetier-Potenzial
-          <select name="mammalScore"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option></select>
+          <select name="mammalScore"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
         </label>
         <label>Brutvogel-Potenzial
           <select name="birdScore"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
@@ -136,10 +143,10 @@
       </div>
 
       <div class="form-section-title">Timing & Fotografie</div>
-      <label>Beste Aktivitätszeit<input name="bestTime" placeholder="z. B. 19:30–21:00 / Morgendämmerung"></label>
-      <label>Beste Jahreszeit<input name="bestSeason" placeholder="z. B. Frühling–Herbst"></label>
-      <label>Zugang / Verhalten<textarea name="accessNotes" rows="2" placeholder="Öffentlicher Weg, nicht quer übers Feld, Hochsitz nur mit Erlaubnis..."></textarea></label>
-      <label>Fotohinweise<textarea name="photoNotes" rows="2" placeholder="Blickrichtung, Brennweite, Gegenlicht, Deckung..."></textarea></label>
+      <label>Beste Aktivitätszeit<input name="bestTime"></label>
+      <label>Beste Jahreszeit<input name="bestSeason"></label>
+      <label>Zugang / Verhalten<textarea name="accessNotes" rows="2"></textarea></label>
+      <label>Fotohinweise<textarea name="photoNotes" rows="2"></textarea></label>
       <label>Notizen<textarea name="notes" rows="3"></textarea></label>
 
       <button class="primary full" value="default">Spot speichern</button>
@@ -152,7 +159,16 @@
         <div><div class="eyebrow">Beobachtung</div><h2>Neue Sichtung</h2></div>
         <button value="cancel" class="close-btn">×</button>
       </div>
-      <label>Spot<select name="spotId" id="sightingSpotSelect" required></select></label>
+
+      <button type="button" id="pickSightingOnMapBtn" class="map-pick-btn">🎯 Sichtung auf Karte auswählen</button>
+      <div id="sightingCoordStatus" class="coord-status">Noch kein exakter Sichtungspunkt ausgewählt.</div>
+
+      <label>Zugehöriger Spot (optional)
+        <select name="spotId" id="sightingSpotSelect">
+          <option value="">Keinem Spot zuordnen</option>
+        </select>
+      </label>
+
       <div class="two-col">
         <label>Tiergruppe
           <select name="group">
@@ -163,6 +179,12 @@
         <label>Anzahl<input name="count" type="number" min="1" value="1"></label>
       </div>
       <label>Art<input name="species" required placeholder="z. B. Reh"></label>
+
+      <div class="two-col">
+        <label>Breitengrad<input name="lat" inputmode="decimal"></label>
+        <label>Längengrad<input name="lng" inputmode="decimal"></label>
+      </div>
+
       <div class="two-col">
         <label>Datum<input name="date" type="date"></label>
         <label>Uhrzeit<input name="time" type="time"></label>
@@ -181,7 +203,7 @@
         </select>
       </label>
       <div class="two-col">
-        <label>Entfernung (m)<input name="distance" type="number" min="0" placeholder="z. B. 30"></label>
+        <label>Entfernung (m)<input name="distance" type="number" min="0"></label>
         <label>Richtung<input name="direction" placeholder="z. B. Waldrand → Feld"></label>
       </div>
       <label>Notizen<textarea name="notes" rows="3"></textarea></label>
@@ -192,14 +214,11 @@
   <template id="activityItemTemplate">
     <article class="activity-item">
       <div class="activity-icon"></div>
-      <div>
-        <strong class="activity-title"></strong>
-        <div class="activity-meta"></div>
-      </div>
+      <div><strong class="activity-title"></strong><div class="activity-meta"></div></div>
     </article>
   </template>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
