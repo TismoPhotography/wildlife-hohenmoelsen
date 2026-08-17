@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 5,
+  "spots": [
+    {
+      "id": "WHM-001",
+      "name": "Hochsitz westlich Mondsee",
+      "type": "Hochsitz",
+      "status": "bestätigt",
+      "lat": 51.130541,
+      "lng": 12.120998,
+      "habitatCode": "WFK",
+      "vegetation": "Wald-Feld-Kante / Sukzessionslandschaft",
+      "waterSource": "See",
+      "waterDistance": 900,
+      "mammals": [
+        "Reh"
+      ],
+      "birds": [],
+      "mammalScore": 5,
+      "birdScore": 3,
+      "bestTime": "Abenddämmerung; bisher bestätigt 19:45–20:15",
+      "bestSeason": "Frühling–Herbst",
+      "accessNotes": "Bestehender eigener Beobachtungsdatensatz. Jagdliche Einrichtungen nur mit Erlaubnis nutzen.",
+      "photoNotes": "Wald-Feld-Kante beobachten; Wind und ruhigen Zugang beachten.",
+      "notes": "Bestätigter Spot aus eigener Beobachtung."
+    },
+    {
+      "id": "WHM-002",
+      "name": "Mondsee – westliche Nasswiesen / Randbereich",
+      "type": "Beobachtungspunkt",
+      "status": "potenziell",
+      "lat": 51.1357,
+      "lng": 12.123,
+      "habitatCode": "GW",
+      "vegetation": "Feuchte Wiesen, Gewässerrand, angrenzende Wald- und Biotopflächen; Bereich nur als grobe Beobachtungszone markiert.",
+      "waterSource": "See",
+      "waterDistance": 100,
+      "mammals": [
+        "Fledermäuse",
+        "Wildkatze (historischer Nachweis im Umfeld; nicht punktgenau)",
+        "Reh"
+      ],
+      "birds": [
+        "Wasser- und Sumpfvögel",
+        "Greifvögel als Nahrungsgäste"
+      ],
+      "mammalScore": 4,
+      "birdScore": 4,
+      "bestTime": "Säugetiere: Dämmerung/Nacht; Vögel: früher Morgen bis Vormittag",
+      "bestSeason": "Ganzjährig; Brutzeit besonders störungssensibel",
+      "accessNotes": "Nur öffentliche Wege nutzen; geschützte Nasswiesen und Biotopflächen nicht betreten.",
+      "photoNotes": "Vom Weg mit Distanz beobachten; für Fledermäuse Abenddämmerung.",
+      "notes": "Westlich des Mondsees sind geschützte Nasswiesen dokumentiert. Ältere Erfassungen nennen Wildkatze und mehrere Fledermausarten im Umfeld; keine Quartier-/Versteckpunkte eingetragen."
+    },
+    {
+      "id": "WHM-003",
+      "name": "Mondsee – öffentliche Ufer-/Rundwegzone",
+      "type": "Beobachtungspunkt",
+      "status": "potenziell",
+      "lat": 51.1357,
+      "lng": 12.1283,
+      "habitatCode": "GW",
+      "vegetation": "Tagebaurestsee mit rekultivierter Uferlandschaft und Rundweg; Naherholungsnutzung.",
+      "waterSource": "See",
+      "waterDistance": 0,
+      "mammals": [
+        "Fledermäuse",
+        "Reh im weiteren Randbereich"
+      ],
+      "birds": [
+        "Wasservögel",
+        "Schwalben",
+        "Greifvögel als Nahrungsgäste"
+      ],
+      "mammalScore": 3,
+      "birdScore": 4,
+      "bestTime": "Früher Morgen; Abenddämmerung",
+      "bestSeason": "Frühling–Herbst; außerhalb starker Besucherzeiten meist ruhiger",
+      "accessNotes": "Öffentlicher Erholungsbereich; lokale Regeln und sensible Uferbereiche beachten.",
+      "photoNotes": "Uferbeobachtung und Flugbewegungen über dem Wasser; längere Brennweite sinnvoll.",
+      "notes": "Öffentliche Beobachtungszone am Mondsee, keine Brutplätze markiert."
+    },
+    {
+      "id": "WHM-004",
+      "name": "Nordfeld Jaucha – NSG Beobachtungszone",
+      "type": "Beobachtungspunkt",
+      "status": "potenziell",
+      "lat": 51.1428,
+      "lng": 12.1304,
+      "habitatCode": "BR",
+      "vegetation": "Reich strukturierte Bergbaufolgelandschaft mit Sukzession, Kleingewässern und Gehölzen. Koordinate ist nur eine grobe Gebietszentrierung.",
+      "waterSource": "Teich/Tümpel",
+      "waterDistance": 200,
+      "mammals": [
+        "Waldspitzmaus",
+        "weitere Kleinsäuger"
+      ],
+      "birds": [
+        "Bienenfresser (historisch)",
+        "Brachpieper (historisch)",
+        "Flussregenpfeifer (historisch)",
+        "Steinschmätzer (historisch)",
+        "Wasser- und Sumpfvögel"
+      ],
+      "mammalScore": 4,
+      "birdScore": 5,
+      "bestTime": "Früher Morgen; je nach Zielart auch Abend",
+      "bestSeason": "Frühjahr–Sommer für Brutvogelbeobachtung mit großem Abstand",
+      "accessNotes": "Naturschutzgebiet: ausschließlich zulässige Wege/Beobachtungsbereiche nutzen, keine Brutplätze aufsuchen oder Vegetation betreten.",
+      "photoNotes": "Gebietsbeobachtung mit Teleobjektiv; keine Annäherung an Nester.",
+      "notes": "Historische Fachangaben nennen 43 Brutvogelarten und 17 Säugetierarten. Artenlisten sind nicht als aktueller punktgenauer Nachweis zu verstehen."
+    },
+    {
+      "id": "WHM-005",
+      "name": "Rippachtal – strukturreiche Kulturlandschaft",
+      "type": "Beobachtungspunkt",
+      "status": "potenziell",
+      "lat": 51.154,
+      "lng": 12.094,
+      "habitatCode": "HG",
+      "vegetation": "Fließgewässer-/Talraum mit Gehölzen und angrenzender Agrarlandschaft; Koordinate dient nur als grobe Beobachtungszone.",
+      "waterSource": "Bach/Graben",
+      "waterDistance": 100,
+      "mammals": [
+        "Feldhase",
+        "Braunbrustigel",
+        "Wasserspitzmaus",
+        "Zwergspitzmaus",
+        "Zwergmaus"
+      ],
+      "birds": [
+        "Rotmilan",
+        "Neuntöter",
+        "Raubwürger",
+        "Wendehals"
+      ],
+      "mammalScore": 4,
+      "birdScore": 5,
+      "bestTime": "Morgen und Abend; Greifvögel zusätzlich tagsüber bei Thermik",
+      "bestSeason": "Frühling–Herbst",
+      "accessNotes": "Von öffentlichen Wegen/Radweg beobachten; landwirtschaftliche Flächen nicht betreten.",
+      "photoNotes": "Feldränder, Hecken und Talraum absuchen; Greifvögel oft über Offenland.",
+      "notes": "Arten basieren auf Landschaftsplan-/FNP-Angaben für den Rippachtalraum, nicht auf punktgenauen aktuellen Sichtungen."
+    },
+    {
+      "id": "WHM-006",
+      "name": "Rekultivierungslandschaft Profen – Wald-/Offenland-Mosaik",
+      "type": "Beobachtungspunkt",
+      "status": "potenziell",
+      "lat": 51.126,
+      "lng": 12.156,
+      "habitatCode": "BR",
+      "vegetation": "Rekultivierte Bergbaufolgelandschaft mit Aufforstung, Sukzessionsbereichen und Agrarflächen.",
+      "waterSource": "",
+      "waterDistance": null,
+      "mammals": [
+        "Reh",
+        "Fuchs",
+        "Feldhase"
+      ],
+      "birds": [
+        "Rotmilan",
+        "Mäusebussard",
+        "Neuntöter",
+        "Goldammer"
+      ],
+      "mammalScore": 4,
+      "birdScore": 4,
+      "bestTime": "Reh/Fuchs: Dämmerung; Greifvögel: Vormittag bis Nachmittag",
+      "bestSeason": "Frühling–Herbst",
+      "accessNotes": "Nur freigegebene öffentliche Wege nutzen; aktive Bergbau-/Betriebsflächen nicht betreten.",
+      "photoNotes": "Übergänge zwischen Gehölzen, Sukzession und Offenland sind am interessantesten.",
+      "notes": "Habitatbasierte Prognose aus dokumentierter Rekultivierung mit Wald, Agrar- und Sukzessionsflächen; Tierarten außer regional belegten Vogelarten sind Potenzial, kein lokaler Nachweis."
+    },
+    {
+      "id": "WHM-007",
+      "name": "Hohenmölsen – Gehölz-/Offenlandzone Sternentor-Umfeld",
+      "type": "Beobachtungspunkt",
+      "status": "potenziell",
+      "lat": 51.157,
+      "lng": 12.112,
+      "habitatCode": "HG",
+      "vegetation": "Gehölze, Büsche und offene Flächen im Hohenmölsener Planungsraum; Koordinate nur als grobe Zone.",
+      "waterSource": "",
+      "waterDistance": null,
+      "mammals": [
+        "Feldhase",
+        "Fuchs"
+      ],
+      "birds": [
+        "Amsel",
+        "Blaumeise",
+        "Bluthänfling",
+        "Dorngrasmücke",
+        "Fitis",
+        "Gartengrasmücke",
+        "Gartenrotschwanz",
+        "Goldammer",
+        "Grauammer",
+        "Mönchsgrasmücke",
+        "Nachtigall",
+        "Neuntöter",
+        "Rotkehlchen",
+        "Stieglitz",
+        "Zilpzalp"
+      ],
+      "mammalScore": 3,
+      "birdScore": 5,
+      "bestTime": "Sonnenaufgang bis früher Vormittag; Abend für Säugetiere",
+      "bestSeason": "Frühjahr–Sommer",
+      "accessNotes": "Nur öffentliche Wege; Brutgehölze nicht betreten.",
+      "photoNotes": "Hecken-/Gebüschkanten ruhig beobachten; Gesang kann bei der Ortung helfen.",
+      "notes": "Brutvogelpotenzial orientiert sich an einer lokalen Artenschutz-Potentialanalyse im Stadtgebiet Hohenmölsen."
+    }
+  ],
+  "sightings": [
+    {
+      "id": "S-0001",
+      "spotId": "WHM-001",
+      "group": "mammal",
+      "species": "Reh",
+      "count": 4,
+      "date": "2026-08-16",
+      "time": "19:45",
+      "behavior": "Äsen / Fressen",
+      "distance": null,
+      "direction": "Waldrand → Feld",
+      "notes": "Vier Rehe zwischen ca. 19:45 und 20:15; ein Reh kam bis ca. 3 m an den Hochsitz."
+    }
+  ]
+}
