@@ -1,4 +1,3 @@
-
 const STORAGE_KEY = "wildlife-hohenmoelsen-v1";
 
 const seed = {
@@ -47,10 +46,30 @@ let markerRecords = [];
 
 const map = L.map("map", {zoomControl:true}).setView([51.130541,12.120998], 15);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors'
+  attribution: '&copy; OpenStreetMap contributors',
+  updateWhenIdle: false,
+  keepBuffer: 6,
+  crossOrigin: true
 }).addTo(map);
+
+function refreshMapSize(){
+  requestAnimationFrame(() => map.invalidateSize({pan:false, debounceMoveend:true}));
+}
+window.addEventListener("load", ()=>{
+  refreshMapSize();
+  setTimeout(refreshMapSize, 250);
+  setTimeout(refreshMapSize, 1000);
+});
+window.addEventListener("resize", refreshMapSize);
+window.addEventListener("orientationchange", ()=>{
+  setTimeout(refreshMapSize, 250);
+  setTimeout(refreshMapSize, 800);
+});
+document.addEventListener("visibilitychange", ()=>{
+  if(!document.hidden) setTimeout(refreshMapSize, 150);
+});
 
 function iconFor(kind){
   const emoji = kind === "mammal" ? "🐾" : kind === "bird" ? "🐦" : "📍";
@@ -282,8 +301,9 @@ function escapeHtml(v){
 }
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=2").catch(()=>{});
 }
 
 updateSpotSelect();
 renderMarkers();
+setTimeout(refreshMapSize, 50);
