@@ -45,6 +45,8 @@ jobs:
 
       - name: Android-Projekt erzeugen
         run: npx cap add android
+      - name: Firebase Android konfigurieren
+        run: cp google-services.json android/app/google-services.json
 
       - name: Stabilen Debug-Keystore laden
         env:
