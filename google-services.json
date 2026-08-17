@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "268245805881-gfeer68sb0jmq7h3fsic1kgotmn04dvq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "de.tismophotography.wildlifehohenmoelsen",
+            "certificate_hash": "2b8b87aecb1f1a090d2565093e9c3f2a664f2ae3"
+          }
+        },
+        {
           "client_id": "268245805881-v1tah1v512jcbv5oc9np43dm05u948uu.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
