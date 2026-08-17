@@ -66,3 +66,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 .pick-preview{filter:drop-shadow(0 0 5px rgba(255,255,255,.95))}
 .popup h3{margin:0 0 6px;font-size:15px}.popup p{margin:4px 0;font-size:12px}.popup button{border:0;border-radius:9px;background:#17331f;color:#fff;padding:7px 9px;margin-top:5px;font-weight:700}
 @media(min-width:800px){.toolbar{right:auto;width:720px}.bottom-sheet{width:480px;right:auto}.spot-panel{width:390px;left:auto;right:12px;top:100px}}
+
+.planner-panel{position:fixed;z-index:930;left:10px;right:10px;top:145px;max-height:58vh;overflow:auto;background:rgba(21,35,26,.985);border:1px solid var(--line);border-radius:20px;padding:15px;box-shadow:var(--shadow)}
+.planner-panel h2{font-size:20px;margin:3px 32px 10px 0}
+.planner-content{display:grid;gap:8px}
+.plan-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px}
+.plan-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.plan-head strong{font-size:14px}.plan-score{font-weight:900;color:#cbe8cf;white-space:nowrap}
+.plan-meta{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4}
+.plan-species{font-size:12px;margin-top:6px}
+.quality-ok{color:#bce7c4}.quality-warn{color:#f2d69a}.quality-review{color:#e8a7a7}
+.species-grid{display:grid;gap:8px}
+.species-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px}
+.species-card h3{margin:0 0 5px;font-size:14px}
+.species-card p{font-size:11px;color:var(--muted);margin:4px 0;line-height:1.4}
+@media(min-width:800px){.planner-panel{width:420px;left:auto;right:12px;top:100px}}

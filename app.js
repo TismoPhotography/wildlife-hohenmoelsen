@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=7;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=8;
 
-const seed={schemaVersion:7,spots:[],sightings:[]};
+const seed={schemaVersion:8,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -16,7 +16,7 @@ function migrateData(raw){
     waterDistance:s.waterDistance??null,mammals:Array.isArray(s.mammals)?s.mammals:[],
     birds:Array.isArray(s.birds)?s.birds:[],mammalScore:Number(s.mammalScore||3),
     birdScore:Number(s.birdScore||3),bestTime:s.bestTime||"",bestSeason:s.bestSeason||"",
-    accessNotes:s.accessNotes||"",photoNotes:s.photoNotes||"",notes:s.notes||""
+    accessNotes:s.accessNotes||"",photoNotes:s.photoNotes||"",notes:s.notes||"",coordConfidence:s.coordConfidence||(s.id==="WHM-001"?"confirmed":"approx"),sourceType:s.sourceType||(s.id==="WHM-001"?"own":"habitat")
   }));
 
   base.sightings=base.sightings.map((s,i)=>{
@@ -135,7 +135,7 @@ window.openSpotPanel=function(id){
   qs("#panelSpotId").textContent=s.id;qs("#panelTitle").textContent=s.name;
   qs("#panelBadges").innerHTML=`<span class="badge ${s.status==="bestätigt"?"confirmed":"potential"}">${s.status==="bestätigt"?"✓ bestätigt":"◇ potenziell"}</span><span class="badge">${esc(s.type)}</span>${s.habitatCode?`<span class="badge">${esc(s.habitatCode)}</span>`:""}`;
   const water=s.waterSource?`${s.waterSource}${s.waterDistance!==null&&s.waterDistance!==""?` · ca. ${s.waterDistance} m`:""}`:"—";
-  qs("#panelContent").innerHTML=detail("Vegetation",val(s.vegetation))+detail("Wasser",water)+detail("Säugetiere",listv(s.mammals))+detail("Säugetier-Potenzial",`<span class="score">${stars(s.mammalScore)}</span>`)+detail("Brutvögel",listv(s.birds))+detail("Brutvogel-Potenzial",`<span class="score">${stars(s.birdScore)}</span>`)+detail("Beste Zeit",val(s.bestTime))+detail("Jahreszeit",val(s.bestSeason))+detail("Zugang",val(s.accessNotes))+detail("Fotografie",val(s.photoNotes))+detail("Notizen",val(s.notes));
+  qs("#panelContent").innerHTML=detail("Vegetation",val(s.vegetation))+detail("Wasser",water)+detail("Säugetiere",listv(s.mammals))+detail("Säugetier-Potenzial",`<span class="score">${stars(s.mammalScore)}</span>`)+detail("Brutvögel",listv(s.birds))+detail("Brutvogel-Potenzial",`<span class="score">${stars(s.birdScore)}</span>`)+detail("Beste Zeit",val(s.bestTime))+detail("Jahreszeit",val(s.bestSeason))+detail("Zugang",val(s.accessNotes))+detail("Fotografie",val(s.photoNotes))+detail("Koordinaten",qualityLabel(s.coordConfidence))+detail("Datenbasis",sourceLabel(s.sourceType))+detail("Notizen",val(s.notes));
   qs("#spotPanel").classList.remove("hidden")
 };
 qs("#closePanelBtn").addEventListener("click",()=>qs("#spotPanel").classList.add("hidden"));
@@ -206,7 +206,7 @@ qs("#sightingSpotSelect").addEventListener("change",e=>{
 
 qs("#spotForm").addEventListener("submit",e=>{
   if(e.submitter?.value==="cancel")return;e.preventDefault();const f=new FormData(e.currentTarget);
-  data.spots.push({id:nextSpotId(),name:f.get("name").trim(),type:f.get("type"),status:f.get("status"),lat:Number(String(f.get("lat")).replace(",",".")),lng:Number(String(f.get("lng")).replace(",",".")),habitatCode:f.get("habitatCode"),vegetation:f.get("vegetation").trim(),waterSource:f.get("waterSource"),waterDistance:f.get("waterDistance")===""?null:Number(f.get("waterDistance")),mammals:split(f.get("mammals")),birds:split(f.get("birds")),mammalScore:Number(f.get("mammalScore")),birdScore:Number(f.get("birdScore")),bestTime:f.get("bestTime").trim(),bestSeason:f.get("bestSeason").trim(),accessNotes:f.get("accessNotes").trim(),photoNotes:f.get("photoNotes").trim(),notes:f.get("notes").trim()});
+  data.spots.push({id:nextSpotId(),name:f.get("name").trim(),type:f.get("type"),status:f.get("status"),lat:Number(String(f.get("lat")).replace(",",".")),lng:Number(String(f.get("lng")).replace(",",".")),habitatCode:f.get("habitatCode"),vegetation:f.get("vegetation").trim(),waterSource:f.get("waterSource"),waterDistance:f.get("waterDistance")===""?null:Number(f.get("waterDistance")),mammals:split(f.get("mammals")),birds:split(f.get("birds")),mammalScore:Number(f.get("mammalScore")),birdScore:Number(f.get("birdScore")),bestTime:f.get("bestTime").trim(),bestSeason:f.get("bestSeason").trim(),accessNotes:f.get("accessNotes").trim(),photoNotes:f.get("photoNotes").trim(),notes:f.get("notes").trim(),coordConfidence:f.get("coordConfidence"),sourceType:f.get("sourceType")});
   saveData();renderMarkers();updateSpotSelect();spotDialog.close();if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
 });
 
@@ -224,11 +224,99 @@ qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:1
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v7-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v8-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
 qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();alert("Import erfolgreich.")}catch{alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function qs(s){return document.querySelector(s)}
+
+
+const SPECIES_PROFILES=[
+  {name:"Reh",icon:"🦌",group:"mammal",hours:[[4,8],[18,24]],habitats:["WFK","WI","HG","BR"],water:false,season:"Ganzjährig",food:"Gräser, Kräuter, Knospen, Blätter, Feldfrüchte",note:"Schwerpunkt meist Dämmerung; Störung und Jahreszeit verschieben Aktivität."},
+  {name:"Wildschwein",icon:"🐗",group:"mammal",hours:[[19,24],[0,6]],habitats:["DW","BR","GW","AF"],water:true,season:"Ganzjährig",food:"Wurzeln, Früchte, Eicheln, Feldfrüchte, Wirbellose",note:"Überwiegend dämmerungs-/nachtaktiv; Suhlen und Deckung sind relevant."},
+  {name:"Fuchs",icon:"🦊",group:"mammal",hours:[[19,24],[0,7]],habitats:["WFK","HG","AF","BR"],water:false,season:"Ganzjährig",food:"Kleinsäuger, Vögel, Wirbellose, Früchte",note:"Oft in Dämmerung und Nacht; auch tagsüber möglich."},
+  {name:"Feldhase",icon:"🐇",group:"mammal",hours:[[5,9],[17,23]],habitats:["AF","WI","HG"],water:false,season:"Ganzjährig",food:"Gräser, Kräuter, Feldfrüchte",note:"Offenland; Aktivität häufig morgens und abends."},
+  {name:"Rotmilan",icon:"🦅",group:"bird",hours:[[8,18]],habitats:["AF","WI","HG","WFK"],water:false,season:"Frühjahr–Herbst",food:"Kleinsäuger, Aas, andere leicht erreichbare Beute",note:"Tagsüber; offene Nahrungsflächen und Thermik günstig."},
+  {name:"Mäusebussard",icon:"🦅",group:"bird",hours:[[8,18]],habitats:["AF","WI","WFK","HG"],water:false,season:"Ganzjährig",food:"Vor allem Kleinsäuger",note:"Tagsüber; Ansitze und Offenland absuchen."},
+  {name:"Neuntöter",icon:"🐦",group:"bird",hours:[[6,18]],habitats:["HG","BR","WFK"],water:false,season:"Spätfrühling–Sommer",food:"Große Insekten, kleine Wirbeltiere",note:"Strukturreiche Hecken und Gebüsche; Brutplätze nicht annähern."},
+  {name:"Wasservögel",icon:"🦆",group:"bird",hours:[[5,20]],habitats:["GW"],water:true,season:"Ganzjährig",food:"Je nach Art Wasserpflanzen, Wirbellose, Fische",note:"Gewässer vom öffentlichen Ufer/Weg beobachten."}
+];
+
+const AUDIT={
+  "WHM-001":{level:"confirmed",text:"Exakte Nutzerkoordinate; bestätigte Rehsichtung."},
+  "WHM-002":{level:"approx",text:"Mondsee-West als grobe Habitat-/Nasswiesenzone plausibel; kein Tierstandort."},
+  "WHM-003":{level:"approx",text:"Mondsee-Uferzone plausibel; Punkt ist nur Beobachtungszone."},
+  "WHM-004":{level:"approx",text:"Nordfeld Jaucha fachlich als Natur-/Landschaftsbereich belegt; Koordinate bleibt grobe Gebietszentrierung."},
+  "WHM-005":{level:"approx",text:"Korrigiert nach Werschen/Rippachtal. Werschen liegt ca. 3 km südwestlich von Hohenmölsen; Punkt bleibt grobe Zone."},
+  "WHM-006":{level:"review",text:"Rekultivierungs-/Sukzessionslandschaft im Profen-Umfeld fachlich plausibel; exakter Beobachtungspunkt sollte vor Ort bzw. anhand öffentlicher Wege verfeinert werden."},
+  "WHM-007":{level:"review",text:"Sternentor-Artenschutzbezug ist belegt; bisherige Punktkoordinate ist nicht als exakte Lage aus der Fachunterlage verifiziert und sollte als grobe Zone behandelt werden."}
+};
+
+function qualityLabel(v){
+  if(v==="confirmed")return'<span class="quality-ok">✓ exakt/bestätigt</span>';
+  if(v==="review")return'<span class="quality-review">! noch prüfen</span>';
+  return'<span class="quality-warn">≈ grobe Zone</span>';
+}
+function sourceLabel(v){
+  return v==="own"?"Eigene Beobachtung":v==="official"?"Amtliche/Fachquelle":"Habitat-Prognose";
+}
+function timeMatches(profile,hour){return profile.hours.some(([a,b])=>hour>=a&&hour<b)}
+function spotSpecies(spot){
+  const names=[...(spot.mammals||[]),...(spot.birds||[])].map(x=>x.toLowerCase());
+  return SPECIES_PROFILES.filter(p=>names.some(n=>n.includes(p.name.toLowerCase())||p.name.toLowerCase().includes(n)));
+}
+function profileScore(spot,p,hour){
+  let score=20;
+  if(p.habitats.includes(spot.habitatCode))score+=25;
+  if(timeMatches(p,hour))score+=25;
+  if(p.water&&spotHasWater(spot))score+=15;
+  if(spot.status==="bestätigt")score+=10;
+  const observed=data.sightings.some(s=>s.spotId===spot.id&&s.species.toLowerCase().includes(p.name.toLowerCase()));
+  if(observed)score+=20;
+  const listed=[...(spot.mammals||[]),...(spot.birds||[])].some(n=>n.toLowerCase().includes(p.name.toLowerCase())||p.name.toLowerCase().includes(n.toLowerCase()));
+  if(listed)score+=10;
+  return Math.min(95,score);
+}
+function showPlanner(kind){
+  const panel=qs("#plannerPanel"),content=qs("#plannerContent");
+  qs("#spotPanel").classList.add("hidden");
+  panel.classList.remove("hidden");
+  if(kind==="species"){
+    qs("#plannerKicker").textContent="Artenwissen";
+    qs("#plannerTitle").textContent="Aktivitäts- & Habitatprofile";
+    content.innerHTML='<div class="species-grid">'+SPECIES_PROFILES.map(p=>`<div class="species-card"><h3>${p.icon} ${p.name}</h3><p><b>Aktiv:</b> ${p.hours.map(h=>`${String(h[0]).padStart(2,"0")}:00–${String(h[1]).padStart(2,"0")}:00`).join(", ")}</p><p><b>Nahrung:</b> ${p.food}</p><p><b>Saison:</b> ${p.season}</p><p>${p.note}</p></div>`).join("")+'</div>';
+    return;
+  }
+  if(kind==="audit"){
+    qs("#plannerKicker").textContent="Datenprüfung";
+    qs("#plannerTitle").textContent="WHM-001 bis WHM-007";
+    content.innerHTML=data.spots.slice().sort((a,b)=>a.id.localeCompare(b.id)).map(s=>{
+      const a=AUDIT[s.id]||{level:s.coordConfidence||"review",text:"Noch nicht separat geprüft."};
+      const cls=a.level==="confirmed"?"quality-ok":a.level==="approx"?"quality-warn":"quality-review";
+      return `<div class="plan-card"><div class="plan-head"><strong>${esc(s.id)} · ${esc(s.name)}</strong><span class="${cls}">${a.level==="confirmed"?"✓":a.level==="approx"?"≈":"!"}</span></div><div class="plan-meta">${esc(a.text)}</div></div>`;
+    }).join("");
+    return;
+  }
+  const hour=new Date().getHours();
+  qs("#plannerKicker").textContent=`Wildlife-Planer · ${String(hour).padStart(2,"0")}:00`;
+  qs("#plannerTitle").textContent="Was lohnt sich jetzt?";
+  let rows=[];
+  for(const s of data.spots){
+    const profiles=spotSpecies(s);
+    const candidates=(profiles.length?profiles:SPECIES_PROFILES.filter(p=>p.habitats.includes(s.habitatCode)))
+      .map(p=>({p,score:profileScore(s,p,hour)})).sort((a,b)=>b.score-a.score).slice(0,3);
+    if(candidates.length){
+      const best=candidates[0].score;
+      rows.push({s,best,candidates});
+    }
+  }
+  rows.sort((a,b)=>b.best-a.best);
+  content.innerHTML=rows.slice(0,6).map(r=>`<div class="plan-card"><div class="plan-head"><strong>${esc(r.s.id)} · ${esc(r.s.name)}</strong><span class="plan-score">${r.best}%</span></div><div class="plan-species">${r.candidates.map(x=>`${x.p.icon} ${x.p.name} ${x.score}%`).join(" · ")}</div><div class="plan-meta">${esc(r.s.bestTime||"Habitat-/Zeitmodell")} · ${qualityLabel(r.s.coordConfidence||"approx")}</div></div>`).join("")||'<div class="plan-meta">Noch nicht genug Habitatdaten für eine Empfehlung.</div>';
+}
+qs("#nowBtn").addEventListener("click",()=>showPlanner("now"));
+qs("#speciesBtn").addEventListener("click",()=>showPlanner("species"));
+qs("#auditBtn").addEventListener("click",()=>showPlanner("audit"));
+qs("#closePlannerBtn").addEventListener("click",()=>qs("#plannerPanel").classList.add("hidden"));
 
 updateSpotSelect();renderMarkers();setTimeout(refreshMapSize,80);

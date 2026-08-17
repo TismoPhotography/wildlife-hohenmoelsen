@@ -8,12 +8,12 @@
   <title>Wildlife Hohenmölsen</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <div class="eyebrow">Wildlife Hohenmölsen · v7</div>
+      <div class="eyebrow">Wildlife Hohenmölsen · v8</div>
       <h1>Säugetiere & Brutvögel</h1>
     </div>
     <button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button>
@@ -33,7 +33,7 @@
       <div class="action-scroll">
         <button id="addSpotBtn" class="primary">+ Spot</button>
         <button id="addSightingBtn">+ Sichtung</button>
-        <button id="exportBtn">Export</button>
+        <button id="nowBtn">⏱ Jetzt</button><button id="speciesBtn">🦌 Arten</button><button id="auditBtn">✓ Prüfung</button><button id="exportBtn">Export</button>
         <label class="file-btn">Import<input id="importInput" type="file" accept="application/json" hidden></label>
       </div>
     </section>
@@ -45,6 +45,14 @@
       <span id="pickBannerText">Tippe auf die gewünschte Stelle in der Karte.</span>
       <button id="cancelPickBtn">Abbrechen</button>
     </div>
+
+
+    <aside id="plannerPanel" class="planner-panel hidden">
+      <button id="closePlannerBtn" class="panel-close">×</button>
+      <div class="spot-kicker" id="plannerKicker">Wildlife-Planer</div>
+      <h2 id="plannerTitle">Was lohnt sich jetzt?</h2>
+      <div id="plannerContent" class="planner-content"></div>
+    </aside>
 
     <aside id="spotPanel" class="spot-panel hidden">
       <button id="closePanelBtn" class="panel-close">×</button>
@@ -148,6 +156,23 @@
       <label>Zugang / Verhalten<textarea name="accessNotes" rows="2"></textarea></label>
       <label>Fotohinweise<textarea name="photoNotes" rows="2"></textarea></label>
       <label>Notizen<textarea name="notes" rows="3"></textarea></label>
+      <div class="form-section-title">Datenqualität</div>
+      <div class="two-col">
+        <label>Koordinaten-Prüfung
+          <select name="coordConfidence">
+            <option value="confirmed">Exakt / bestätigt</option>
+            <option value="approx" selected>Grobe Zone</option>
+            <option value="review">Noch prüfen</option>
+          </select>
+        </label>
+        <label>Quellentyp
+          <select name="sourceType">
+            <option value="own">Eigene Beobachtung</option>
+            <option value="official">Amtliche/Fachquelle</option>
+            <option value="habitat" selected>Habitat-Prognose</option>
+          </select>
+        </label>
+      </div>
 
       <button class="primary full" value="default">Spot speichern</button>
     </form>
@@ -219,6 +244,6 @@
   </template>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
