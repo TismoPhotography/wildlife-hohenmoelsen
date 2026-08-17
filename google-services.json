@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "268245805881",
+    "project_id": "wildlife-hohenmoelsen",
+    "storage_bucket": "wildlife-hohenmoelsen.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:268245805881:android:b3d34bd039bfeb7d9c16e8",
+        "android_client_info": {
+          "package_name": "de.tismophotography.wildlifehohenmoelsen"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "268245805881-v1tah1v512jcbv5oc9np43dm05u948uu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "de.tismophotography.wildlifehohenmoelsen",
+            "certificate_hash": "60b104eb884d8ade41c71bd6265def91df932d9a"
+          }
+        },
+        {
+          "client_id": "268245805881-0q69s1rccsccgpbeidiie81a5cpmhfgq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAnEf5sMJyQOcxpTtsPkYRijhpz67TUK0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "268245805881-0q69s1rccsccgpbeidiie81a5cpmhfgq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
