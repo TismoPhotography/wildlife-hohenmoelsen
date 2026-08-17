@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=8;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=9;
 
-const seed={schemaVersion:8,spots:[],sightings:[]};
+const seed={schemaVersion:9,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -57,7 +57,8 @@ const satellite=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/service
   attribution:'Tiles &copy; Esri — Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
 });
 
-L.control.layers({"Karte":street,"Satellit":satellite},null,{position:"topright",collapsed:false}).addTo(map);
+L.control.layers({"Karte":street,"Satellit":satellite},null,{position:"bottomleft",collapsed:true}).addTo(map);
+map.on("baselayerchange",()=>setTimeout(refreshMapSize,60));
 
 function refreshMapSize(){requestAnimationFrame(()=>map.invalidateSize({pan:false,debounceMoveend:true}))}
 window.addEventListener("load",()=>{refreshMapSize();setTimeout(refreshMapSize,250);setTimeout(refreshMapSize,800)});
@@ -154,6 +155,31 @@ function nextSightingId(){return`S-${String(Math.max(0,...data.sightings.map(s=>
 
 const spotDialog=qs("#spotDialog"),sightingDialog=qs("#sightingDialog");
 
+function closeDialogClean(dialog){
+  if(!dialog || !dialog.open) return;
+  dialog.close("cancel");
+  pickerMode=null;
+  qs("#pickBanner").classList.add("hidden");
+  if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
+  setTimeout(refreshMapSize,50);
+}
+
+document.querySelectorAll(".dialog-cancel").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const dialog=btn.closest("dialog");
+    closeDialogClean(dialog);
+  });
+});
+
+// Also support the Android/browser back/cancel event cleanly.
+[spotDialog,sightingDialog].forEach(dialog=>{
+  dialog.addEventListener("cancel",e=>{
+    e.preventDefault();
+    closeDialogClean(dialog);
+  });
+});
+
+
 function beginPick(mode){
   pickerMode=mode;
   const banner=qs("#pickBanner");
@@ -205,13 +231,13 @@ qs("#sightingSpotSelect").addEventListener("change",e=>{
 });
 
 qs("#spotForm").addEventListener("submit",e=>{
-  if(e.submitter?.value==="cancel")return;e.preventDefault();const f=new FormData(e.currentTarget);
+  e.preventDefault();const f=new FormData(e.currentTarget);
   data.spots.push({id:nextSpotId(),name:f.get("name").trim(),type:f.get("type"),status:f.get("status"),lat:Number(String(f.get("lat")).replace(",",".")),lng:Number(String(f.get("lng")).replace(",",".")),habitatCode:f.get("habitatCode"),vegetation:f.get("vegetation").trim(),waterSource:f.get("waterSource"),waterDistance:f.get("waterDistance")===""?null:Number(f.get("waterDistance")),mammals:split(f.get("mammals")),birds:split(f.get("birds")),mammalScore:Number(f.get("mammalScore")),birdScore:Number(f.get("birdScore")),bestTime:f.get("bestTime").trim(),bestSeason:f.get("bestSeason").trim(),accessNotes:f.get("accessNotes").trim(),photoNotes:f.get("photoNotes").trim(),notes:f.get("notes").trim(),coordConfidence:f.get("coordConfidence"),sourceType:f.get("sourceType")});
   saveData();renderMarkers();updateSpotSelect();spotDialog.close();if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
 });
 
 qs("#sightingForm").addEventListener("submit",e=>{
-  if(e.submitter?.value==="cancel")return;e.preventDefault();const f=new FormData(e.currentTarget),spotId=f.get("spotId"),linked=data.spots.find(s=>s.id===spotId);
+  e.preventDefault();const f=new FormData(e.currentTarget),spotId=f.get("spotId"),linked=data.spots.find(s=>s.id===spotId);
   let lat=Number(String(f.get("lat")||"").replace(",",".")),lng=Number(String(f.get("lng")||"").replace(",","."));
   if(!Number.isFinite(lat)||!Number.isFinite(lng)){if(linked){lat=linked.lat;lng=linked.lng}else{alert("Bitte einen Punkt auf der Karte auswählen oder einen Spot zuordnen.");return}}
   const group=f.get("group"),species=f.get("species").trim();
@@ -224,7 +250,7 @@ qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:1
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v8-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v9-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
 qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();alert("Import erfolgreich.")}catch{alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}

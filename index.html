@@ -8,12 +8,12 @@
   <title>Wildlife Hohenmölsen</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <div class="eyebrow">Wildlife Hohenmölsen · v8</div>
+      <div class="eyebrow">Wildlife Hohenmölsen · v9</div>
       <h1>Säugetiere & Brutvögel</h1>
     </div>
     <button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button>
@@ -78,7 +78,7 @@
     <form method="dialog" id="spotForm" class="form-card">
       <div class="dialog-head">
         <div><div class="eyebrow">Wildlife-Datenbank</div><h2>Neuen Spot anlegen</h2></div>
-        <button value="cancel" class="close-btn">×</button>
+        <button type="button" class="close-btn dialog-cancel" aria-label="Abbrechen">×</button>
       </div>
 
       <button type="button" id="pickSpotOnMapBtn" class="map-pick-btn">📍 Punkt auf Karte auswählen</button>
@@ -174,7 +174,7 @@
         </label>
       </div>
 
-      <button class="primary full" value="default">Spot speichern</button>
+      <div class="dialog-actions"><button type="button" class="secondary full dialog-cancel">Abbrechen</button><button class="primary full" value="default">Spot speichern</button></div>
     </form>
   </dialog>
 
@@ -182,7 +182,7 @@
     <form method="dialog" id="sightingForm" class="form-card">
       <div class="dialog-head">
         <div><div class="eyebrow">Beobachtung</div><h2>Neue Sichtung</h2></div>
-        <button value="cancel" class="close-btn">×</button>
+        <button type="button" class="close-btn dialog-cancel" aria-label="Abbrechen">×</button>
       </div>
 
       <button type="button" id="pickSightingOnMapBtn" class="map-pick-btn">🎯 Sichtung auf Karte auswählen</button>
@@ -232,7 +232,7 @@
         <label>Richtung<input name="direction" placeholder="z. B. Waldrand → Feld"></label>
       </div>
       <label>Notizen<textarea name="notes" rows="3"></textarea></label>
-      <button class="primary full" value="default">Sichtung speichern</button>
+      <div class="dialog-actions"><button type="button" class="secondary full dialog-cancel">Abbrechen</button><button class="primary full" value="default">Sichtung speichern</button></div>
     </form>
   </dialog>
 
@@ -244,6 +244,6 @@
   </template>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
