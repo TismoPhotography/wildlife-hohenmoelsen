@@ -1,0 +1,9 @@
+{
+  "name": "Wildlife Hohenmölsen",
+  "short_name": "Wildlife WHM",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f1712",
+  "theme_color": "#1f3d2a",
+  "description": "Mobile Wildlife-Karte für Säugetiere, Brutvögel, Spots und Sichtungen rund um Hohenmölsen."
+}

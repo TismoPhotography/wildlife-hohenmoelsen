@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f3d2a" />
+  <title>Wildlife Hohenmölsen</title>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIINfQ3yn5T2WQpRJo0+f9v1U4vW6+fQb6s="
+    crossorigin=""
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">Wildlife Hohenmölsen</div>
+      <h1>Säugetiere & Brutvögel</h1>
+    </div>
+    <button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <div class="segmented" role="group" aria-label="Filter">
+        <button class="filter active" data-filter="all">Alle</button>
+        <button class="filter" data-filter="mammal">🐾 Säugetiere</button>
+        <button class="filter" data-filter="bird">🐦 Brutvögel</button>
+        <button class="filter" data-filter="spot">📍 Spots</button>
+      </div>
+
+      <div class="actions">
+        <button id="addSpotBtn" class="primary">+ Spot</button>
+        <button id="addSightingBtn">+ Sichtung</button>
+        <button id="exportBtn">Export</button>
+        <label class="file-btn">
+          Import
+          <input id="importInput" type="file" accept="application/json" hidden>
+        </label>
+      </div>
+    </section>
+
+    <section id="map"></section>
+
+    <section class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="stats">
+        <div><strong id="spotCount">0</strong><span>Spots</span></div>
+        <div><strong id="sightingCount">0</strong><span>Sichtungen</span></div>
+        <div><strong id="speciesCount">0</strong><span>Arten</span></div>
+      </div>
+      <div id="activityList" class="activity-list"></div>
+    </section>
+  </main>
+
+  <dialog id="spotDialog">
+    <form method="dialog" id="spotForm" class="form-card">
+      <div class="dialog-head">
+        <h2>Neuen Spot anlegen</h2>
+        <button value="cancel" class="close-btn">×</button>
+      </div>
+      <label>Name<input name="name" required placeholder="z. B. Hochsitz Nordfeld"></label>
+      <label>Typ
+        <select name="type">
+          <option value="Hochsitz">Hochsitz</option>
+          <option value="Beobachtungspunkt">Beobachtungspunkt</option>
+          <option value="Wasserstelle">Wasserstelle</option>
+          <option value="Wald-Feld-Kante">Wald-Feld-Kante</option>
+          <option value="Brutvogel-Habitat">Brutvogel-Habitat</option>
+        </select>
+      </label>
+      <div class="two-col">
+        <label>Breitengrad<input name="lat" required inputmode="decimal"></label>
+        <label>Längengrad<input name="lng" required inputmode="decimal"></label>
+      </div>
+      <button type="button" id="useMapCenterBtn">Kartenmitte übernehmen</button>
+      <label>Vegetation / Habitat<textarea name="habitat" rows="3" placeholder="Wald-Feld-Kante, Brache, Hecke, Wasser..."></textarea></label>
+      <label>Potenzielle Säugetiere<textarea name="mammals" rows="2" placeholder="Reh, Fuchs, Feldhase..."></textarea></label>
+      <label>Potenzielle Brutvögel<textarea name="birds" rows="2" placeholder="Rotmilan, Mäusebussard..."></textarea></label>
+      <label>Notizen<textarea name="notes" rows="3"></textarea></label>
+      <button class="primary" value="default">Speichern</button>
+    </form>
+  </dialog>
+
+  <dialog id="sightingDialog">
+    <form method="dialog" id="sightingForm" class="form-card">
+      <div class="dialog-head">
+        <h2>Neue Sichtung</h2>
+        <button value="cancel" class="close-btn">×</button>
+      </div>
+      <label>Spot
+        <select name="spotId" id="sightingSpotSelect" required></select>
+      </label>
+      <label>Tiergruppe
+        <select name="group">
+          <option value="mammal">Säugetier</option>
+          <option value="bird">Brutvogel</option>
+        </select>
+      </label>
+      <label>Art<input name="species" required placeholder="z. B. Reh"></label>
+      <div class="two-col">
+        <label>Anzahl<input name="count" type="number" min="1" value="1"></label>
+        <label>Uhrzeit<input name="time" type="time"></label>
+      </div>
+      <label>Datum<input name="date" type="date"></label>
+      <label>Verhalten
+        <select name="behavior">
+          <option>Äsen / Fressen</option>
+          <option>Trinken</option>
+          <option>Ruhen</option>
+          <option>Wechsel / Durchziehen</option>
+          <option>Flucht</option>
+          <option>Balz / Revierverhalten</option>
+          <option>Brutpflege</option>
+          <option>Sonstiges</option>
+        </select>
+      </label>
+      <label>Notizen<textarea name="notes" rows="3"></textarea></label>
+      <button class="primary" value="default">Speichern</button>
+    </form>
+  </dialog>
+
+  <template id="activityItemTemplate">
+    <article class="activity-item">
+      <div class="activity-icon"></div>
+      <div>
+        <strong class="activity-title"></strong>
+        <div class="activity-meta"></div>
+      </div>
+    </article>
+  </template>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin="">
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
