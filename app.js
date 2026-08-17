@@ -113,18 +113,6 @@ async function initFirebase(){
     db=firebase.firestore();
     setCloudStatus("syncing","☁ Anmeldung…");
 
-    // Finish a possible Google redirect only AFTER Firebase has been initialized.
-    try{
-      const redirectResult=await firebase.auth().getRedirectResult();
-      if(redirectResult?.user){
-        currentUser=redirectResult.user;
-        authMsg("Anmeldung erfolgreich.","ok");
-      }
-    }catch(redirectErr){
-      console.error("Redirect login failed",redirectErr);
-      authMsg(friendlyAuthError(redirectErr),"error");
-    }
-
     // Keep an existing Google/E-mail session. Only create an anonymous
     // account when there is no persisted user at all.
     currentUser=firebase.auth().currentUser;
@@ -191,6 +179,7 @@ function friendlyAuthError(err){
     "auth/wrong-password":"E-Mail oder Passwort ist falsch.",
     "auth/user-not-found":"Für diese E-Mail wurde kein Konto gefunden.",
     "auth/popup-closed-by-user":"Google-Anmeldung wurde abgebrochen.",
+    "auth/popup-blocked":"Das Google-Anmeldefenster wurde vom Browser blockiert. Bitte Pop-ups für diese Seite erlauben.",
     "auth/account-exists-with-different-credential":"Für diese E-Mail existiert bereits eine andere Anmeldemethode.",
     "auth/credential-already-in-use":"Dieses Konto ist bereits mit einem anderen Benutzer verknüpft."
   };
@@ -224,17 +213,30 @@ async function loginEmail(){
 async function googleLogin(){
   authMsg("Google-Anmeldung wird geöffnet…");
   try{
-    const auth=firebase.auth(),provider=new firebase.auth.GoogleAuthProvider();
+    const auth=firebase.auth();
+    const provider=new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({prompt:"select_account"});
-    const user=auth.currentUser,isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const user=auth.currentUser;
+
+    let result;
     if(user?.isAnonymous){
-      if(isMobile)await user.linkWithRedirect(provider);
-      else{await user.linkWithPopup(provider);currentUser=auth.currentUser;updateAuthUI();authMsg("Google-Konto verknüpft.","ok")}
+      // Preserve the anonymous Firebase UID and attach Google to it.
+      result=await user.linkWithPopup(provider);
+      currentUser=result.user;
+      authMsg("Google-Konto erfolgreich verknüpft.","ok");
     }else{
-      if(isMobile)await auth.signInWithRedirect(provider);
-      else{await auth.signInWithPopup(provider);currentUser=auth.currentUser;updateAuthUI();authMsg("Mit Google angemeldet.","ok")}
+      result=await auth.signInWithPopup(provider);
+      currentUser=result.user;
+      authMsg("Mit Google angemeldet.","ok");
     }
-  }catch(err){console.error(err);authMsg(friendlyAuthError(err),"error")}
+
+    cloudReady=true;
+    updateAuthUI();
+    setCloudStatus("online","☁ Synchronisiert");
+  }catch(err){
+    console.error(err);
+    authMsg(friendlyAuthError(err),"error");
+  }
 }
 async function logoutUser(){
   authMsg("Abmeldung…");
