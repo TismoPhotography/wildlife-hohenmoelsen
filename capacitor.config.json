@@ -1,0 +1,8 @@
+{
+  "appId": "de.tismophotography.wildlifehohenmoelsen",
+  "appName": "Wildlife Hohenmölsen",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
