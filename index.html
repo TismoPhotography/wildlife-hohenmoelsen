@@ -8,12 +8,12 @@
   <title>Wildlife Hohenmölsen</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <div class="eyebrow">Wildlife Hohenmölsen · v10</div>
+      <div class="eyebrow">Wildlife Hohenmölsen · v11</div>
       <h1>Säugetiere & Brutvögel</h1>
     </div>
     <button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button>
@@ -31,7 +31,7 @@
         <button class="filter" data-filter="highseat">🪵 Hochsitze</button>
       </div>
       <div class="action-scroll">
-        <button id="addSpotBtn" class="primary">+ Spot</button>
+        <span id="cloudStatus" class="cloud-status syncing">☁ Verbinden…</span><button id="addSpotBtn" class="primary">+ Spot</button>
         <button id="addSightingBtn">+ Sichtung</button>
         <button id="nowBtn">⏱ Jetzt</button><button id="speciesBtn">🦌 Arten</button><button id="auditBtn">✓ Prüfung</button><button id="bestNowBtn">🌤 Beste Spots jetzt</button><button id="weatherBtn">☁ Wetter</button><button id="exportBtn">Export</button>
         <label class="file-btn">Import<input id="importInput" type="file" accept="application/json" hidden></label>
@@ -252,6 +252,9 @@
   </template>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=10"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=10;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=11;
 
-const seed={schemaVersion:10,spots:[],sightings:[]};
+const seed={schemaVersion:11,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -44,6 +44,94 @@ function loadData(){
 }
 function saveData(){data.schemaVersion=SCHEMA_VERSION;localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
 let data=loadData(),currentFilter="all",markerRecords=[],pickerMode=null,pickPreview=null;
+
+const firebaseConfig={
+  apiKey:"AIzaSyBalKleJYqQhXEE2U_JHPSencqNEwDOCzA",
+  authDomain:"wildlife-hohenmoelsen.firebaseapp.com",
+  projectId:"wildlife-hohenmoelsen",
+  storageBucket:"wildlife-hohenmoelsen.firebasestorage.app",
+  messagingSenderId:"268245805881",
+  appId:"1:268245805881:web:7971ef9a2330b3859c16e8",
+  measurementId:"G-5ENY9YR282"
+};
+
+let db=null,currentUser=null,cloudReady=false,cloudApplying=false;
+function setCloudStatus(state,text){
+  const el=document.querySelector("#cloudStatus"); if(!el)return;
+  el.className=`cloud-status ${state}`; el.textContent=text;
+}
+function cleanForFirestore(obj){
+  return JSON.parse(JSON.stringify(obj,(k,v)=>v===undefined?null:v));
+}
+async function putSpotCloud(spot){
+  if(!cloudReady||!db)return;
+  await db.collection("spots").doc(String(spot.id)).set(cleanForFirestore({...spot,updatedBy:currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),{merge:true});
+}
+async function putSightingCloud(sighting){
+  if(!cloudReady||!db)return;
+  await db.collection("sightings").doc(String(sighting.id)).set(cleanForFirestore({...sighting,createdBy:sighting.createdBy||currentUser.uid,updatedBy:currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),{merge:true});
+}
+async function uploadAllToCloud(){
+  if(!cloudReady||!db)return;
+  const batchLimit=400;
+  const docs=[
+    ...data.spots.map(x=>["spots",x]),
+    ...data.sightings.map(x=>["sightings",x])
+  ];
+  for(let i=0;i<docs.length;i+=batchLimit){
+    const batch=db.batch();
+    for(const [col,obj] of docs.slice(i,i+batchLimit)){
+      const ref=db.collection(col).doc(String(obj.id));
+      batch.set(ref,cleanForFirestore({...obj,updatedBy:currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),{merge:true});
+    }
+    await batch.commit();
+  }
+}
+function subscribeCloud(){
+  let cloudSpots=[],cloudSightings=[];
+  const apply=()=>{
+    if(!cloudReady)return;
+    cloudApplying=true;
+    data=migrateData({schemaVersion:SCHEMA_VERSION,spots:cloudSpots,sightings:cloudSightings});
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+    renderMarkers();updateSpotSelect();
+    cloudApplying=false;
+    setCloudStatus("online","☁ Synchronisiert");
+  };
+  db.collection("spots").onSnapshot(s=>{
+    cloudSpots=s.docs.map(d=>d.data()).filter(x=>x&&x.id);
+    apply();
+  },err=>{console.error(err);setCloudStatus("offline","☁ Sync-Fehler")});
+  db.collection("sightings").onSnapshot(s=>{
+    cloudSightings=s.docs.map(d=>d.data()).filter(x=>x&&x.id);
+    apply();
+  },err=>{console.error(err);setCloudStatus("offline","☁ Sync-Fehler")});
+}
+async function initFirebase(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+    setCloudStatus("syncing","☁ Anmeldung…");
+    await firebase.auth().signInAnonymously();
+    currentUser=firebase.auth().currentUser;
+    if(!currentUser)throw new Error("Keine Firebase-Benutzer-ID");
+    cloudReady=true;
+    setCloudStatus("syncing","☁ Erster Sync…");
+
+    // One-time migration: this browser's v10 local data is merged into Firestore.
+    const migrationKey="wildlife-v11-cloud-migrated";
+    if(localStorage.getItem(migrationKey)!=="yes"){
+      await uploadAllToCloud();
+      localStorage.setItem(migrationKey,"yes");
+    }
+    subscribeCloud();
+  }catch(err){
+    console.error("Firebase init failed",err);
+    cloudReady=false;
+    setCloudStatus("offline","☁ Offline – lokal");
+  }
+}
+
 
 const map=L.map("map",{zoomControl:true,preferCanvas:true,fadeAnimation:false}).setView([51.135,12.125],14);
 
@@ -150,8 +238,8 @@ function updateSpotSelect(){
   select.innerHTML='<option value="">Keinem Spot zuordnen</option>'+[...data.spots].sort((a,b)=>a.id.localeCompare(b.id)).map(s=>`<option value="${esc(s.id)}">${esc(s.id)} · ${esc(s.name)}</option>`).join("");
   if([...select.options].some(o=>o.value===current))select.value=current
 }
-function nextSpotId(){return`WHM-${String(Math.max(0,...data.spots.map(s=>Number(String(s.id).match(/(\d+)$/)?.[1]||0)))+1).padStart(3,"0")}`}
-function nextSightingId(){return`S-${String(Math.max(0,...data.sightings.map(s=>Number(String(s.id).match(/(\d+)$/)?.[1]||0)))+1).padStart(4,"0")}`}
+function nextSpotId(){const u=(currentUser?.uid||"local").slice(0,4).toUpperCase();return`WHM-${Date.now().toString(36).toUpperCase()}-${u}`}
+function nextSightingId(){const u=(currentUser?.uid||"local").slice(0,4).toUpperCase();return`S-${Date.now().toString(36).toUpperCase()}-${u}`}`}
 
 const spotDialog=qs("#spotDialog"),sightingDialog=qs("#sightingDialog");
 
@@ -230,28 +318,31 @@ qs("#sightingSpotSelect").addEventListener("change",e=>{
   if(!f.elements.lat.value&&!f.elements.lng.value){f.elements.lat.value=s.lat.toFixed(6);f.elements.lng.value=s.lng.toFixed(6);qs("#sightingCoordStatus").textContent="Vorbelegt mit dem Spot-Punkt; für exakte Sichtung Karte antippen."}
 });
 
-qs("#spotForm").addEventListener("submit",e=>{
+qs("#spotForm").addEventListener("submit",async e=>{
   e.preventDefault();const f=new FormData(e.currentTarget);
-  data.spots.push({id:nextSpotId(),name:f.get("name").trim(),type:f.get("type"),status:f.get("status"),lat:Number(String(f.get("lat")).replace(",",".")),lng:Number(String(f.get("lng")).replace(",",".")),habitatCode:f.get("habitatCode"),vegetation:f.get("vegetation").trim(),waterSource:f.get("waterSource"),waterDistance:f.get("waterDistance")===""?null:Number(f.get("waterDistance")),mammals:split(f.get("mammals")),birds:split(f.get("birds")),mammalScore:Number(f.get("mammalScore")),birdScore:Number(f.get("birdScore")),bestTime:f.get("bestTime").trim(),bestSeason:f.get("bestSeason").trim(),accessNotes:f.get("accessNotes").trim(),photoNotes:f.get("photoNotes").trim(),notes:f.get("notes").trim(),coordConfidence:f.get("coordConfidence"),sourceType:f.get("sourceType")});
-  saveData();renderMarkers();updateSpotSelect();spotDialog.close();if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
+  const spot={id:nextSpotId(),name:f.get("name").trim(),type:f.get("type"),status:f.get("status"),lat:Number(String(f.get("lat")).replace(",",".")),lng:Number(String(f.get("lng")).replace(",",".")),habitatCode:f.get("habitatCode"),vegetation:f.get("vegetation").trim(),waterSource:f.get("waterSource"),waterDistance:f.get("waterDistance")===""?null:Number(f.get("waterDistance")),mammals:split(f.get("mammals")),birds:split(f.get("birds")),mammalScore:Number(f.get("mammalScore")),birdScore:Number(f.get("birdScore")),bestTime:f.get("bestTime").trim(),bestSeason:f.get("bestSeason").trim(),accessNotes:f.get("accessNotes").trim(),photoNotes:f.get("photoNotes").trim(),notes:f.get("notes").trim(),coordConfidence:f.get("coordConfidence"),sourceType:f.get("sourceType"),createdBy:currentUser?.uid||"local"};
+  data.spots.push(spot);saveData();renderMarkers();updateSpotSelect();spotDialog.close();if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
+  if(cloudReady){try{setCloudStatus("syncing","☁ Speichern…");await putSpotCloud(spot)}catch(err){console.error(err);setCloudStatus("offline","☁ Sync-Fehler")}}
 });
 
-qs("#sightingForm").addEventListener("submit",e=>{
+qs("#sightingForm").addEventListener("submit",async e=>{
   e.preventDefault();const f=new FormData(e.currentTarget),spotId=f.get("spotId"),linked=data.spots.find(s=>s.id===spotId);
   let lat=Number(String(f.get("lat")||"").replace(",",".")),lng=Number(String(f.get("lng")||"").replace(",","."));
   if(!Number.isFinite(lat)||!Number.isFinite(lng)){if(linked){lat=linked.lat;lng=linked.lng}else{alert("Bitte einen Punkt auf der Karte auswählen oder einen Spot zuordnen.");return}}
   const group=f.get("group"),species=f.get("species").trim();
-  data.sightings.push({id:nextSightingId(),spotId,group,species,count:Number(f.get("count"))||1,lat,lng,date:f.get("date"),time:f.get("time"),behavior:f.get("behavior"),distance:f.get("distance")===""?null:Number(f.get("distance")),direction:f.get("direction").trim(),notes:f.get("notes").trim()});
+  const sighting={id:nextSightingId(),spotId,group,species,count:Number(f.get("count"))||1,lat,lng,date:f.get("date"),time:f.get("time"),behavior:f.get("behavior"),distance:f.get("distance")===""?null:Number(f.get("distance")),direction:f.get("direction").trim(),notes:f.get("notes").trim(),createdBy:currentUser?.uid||"local"};
+  data.sightings.push(sighting);
   if(linked){const key=group==="mammal"?"mammals":"birds";linked[key]=Array.from(new Set([...(linked[key]||[]),species]));linked.status="bestätigt"}
   saveData();renderMarkers();sightingDialog.close();if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
+  if(cloudReady){try{setCloudStatus("syncing","☁ Speichern…");await putSightingCloud(sighting);if(linked)await putSpotCloud(linked)}catch(err){console.error(err);setCloudStatus("offline","☁ Sync-Fehler")}}
 });
 
 qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:16,enableHighAccuracy:true}));
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v10-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
-qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();alert("Import erfolgreich.")}catch{alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v11-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();if(cloudReady){setCloudStatus("syncing","☁ Import-Sync…");await uploadAllToCloud()}alert("Import erfolgreich – Daten wurden mit der Cloud zusammengeführt.")}catch(err){console.error(err);alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
@@ -515,4 +606,4 @@ map.on("locationfound",e=>{
   lastUserLocation={lat:e.latlng.lat,lng:e.latlng.lng};
 });
 
-updateSpotSelect();renderMarkers();setTimeout(refreshMapSize,80);
+updateSpotSelect();renderMarkers();setTimeout(refreshMapSize,80);initFirebase();

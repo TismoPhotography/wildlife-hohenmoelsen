@@ -127,3 +127,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 .condition-good{color:#bce7c4}.condition-mid{color:#f2d69a}.condition-poor{color:#e8a7a7}
 .sun-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12px;line-height:1.45}
 .weather-note{font-size:10px;color:var(--muted);line-height:1.35;margin-top:6px}
+
+.cloud-status{flex:0 0 auto;display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:8px 10px;font-size:11px;font-weight:800;white-space:nowrap;background:rgba(21,35,26,.95)}
+.cloud-status.online{color:#bce7c4}.cloud-status.syncing{color:#f2d69a}.cloud-status.offline{color:#e8a7a7}
