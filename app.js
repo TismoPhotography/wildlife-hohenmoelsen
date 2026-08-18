@@ -161,25 +161,21 @@ cloudReady=true;
     }
     subscribeCloud();
 
-    // Keep UI/state current after login changes.
-  firebase.auth().onAuthStateChanged(async user=>{
-   if(!user){
-    currentUser=null; 
-    currentUserRole="user";
-    cloudReady=false;
-    updateAuthUI();
-    return;
-  }
+        // Keep UI/state current after login changes.
+    firebase.auth().onAuthStateChanged(async user=>{
+      if(!user){
+        currentUser=null;
+        currentUserRole="user";
+        cloudReady=false;
+        updateAuthUI();
+        return;
+      }
 
-  currentUser=user;
-  cloudReady=true;
-  await loadUserRole();
-});
+      currentUser=user;
+      cloudReady=true;
+      await loadUserRole();
+    });
 
-  currentUser=user;
-  cloudReady=true;
-  await loadUserRole();
-});
   }catch(err){
     console.error("Firebase init failed",err);
     cloudReady=false;
