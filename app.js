@@ -55,10 +55,11 @@ const firebaseConfig={
   measurementId:"G-5ENY9YR282"
 };
 
-let db=null,currentUser=null,currentUserRole="user",cloudReady=false,cloudApplying=false;
+let db=null,currentUser=null,currentUserRole="user",currentUserName="",cloudReady=false,cloudApplying=false;
 
 async function loadUserRole(){
   currentUserRole="user";
+  currentUserName="";
 
   if(!db||!currentUser||currentUser.isAnonymous){
     updateAuthUI();
@@ -71,19 +72,26 @@ async function loadUserRole(){
     if(doc.exists){
       const userData=doc.data();
 
+      currentUserName=
+        userData.displayName||
+        currentUser.displayName||
+        currentUser.email||
+        "";
+
       if(userData.active!==false && userData.role==="admin"){
         currentUserRole="admin";
       }
     }
 
     updateAuthUI();
+
   }catch(err){
     console.error("Benutzerrolle konnte nicht geladen werden:",err);
     currentUserRole="user";
+    currentUserName="";
     updateAuthUI();
   }
 }
-
 function setCloudStatus(state,text){
   const el=document.querySelector("#cloudStatus"); if(!el)return;
   el.className=`cloud-status ${state}`; el.textContent=text;
@@ -101,7 +109,7 @@ async function logActivity(action,entityType,entityId,details={}){
       entityId:entityId||null,
       details,
       userId:currentUser.uid,
-      userName:currentUser.displayName||"",
+      userName:currentUserName||currentUser.displayName||currentUser.email||"",
       userEmail:currentUser.email||"",
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     }));
