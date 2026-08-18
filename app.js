@@ -55,7 +55,35 @@ const firebaseConfig={
   measurementId:"G-5ENY9YR282"
 };
 
-let db=null,currentUser=null,cloudReady=false,cloudApplying=false;
+let db=null,currentUser=null,currentUserRole="user",cloudReady=false,cloudApplying=false;
+
+async function loadUserRole(){
+  currentUserRole="user";
+
+  if(!db||!currentUser||currentUser.isAnonymous){
+    updateAuthUI();
+    return;
+  }
+
+  try{
+    const doc=await db.collection("users").doc(currentUser.uid).get();
+
+    if(doc.exists){
+      const userData=doc.data();
+
+      if(userData.active!==false && userData.role==="admin"){
+        currentUserRole="admin";
+      }
+    }
+
+    updateAuthUI();
+  }catch(err){
+    console.error("Benutzerrolle konnte nicht geladen werden:",err);
+    currentUserRole="user";
+    updateAuthUI();
+  }
+}
+
 function setCloudStatus(state,text){
   const el=document.querySelector("#cloudStatus"); if(!el)return;
   el.className=`cloud-status ${state}`; el.textContent=text;
@@ -115,15 +143,15 @@ async function initFirebase(){
 
     // Keep an existing Google/E-mail session. Only create an anonymous
     // account when there is no persisted user at all.
-    currentUser=firebase.auth().currentUser;
-    if(!currentUser){
-      await firebase.auth().signInAnonymously();
-      currentUser=firebase.auth().currentUser;
-    }
-    if(!currentUser)throw new Error("Keine Firebase-Benutzer-ID");
+ currentUser=firebase.auth().currentUser;
+if(!currentUser){
+  await firebase.auth().signInAnonymously();
+  currentUser=firebase.auth().currentUser;
+}
+if(!currentUser)throw new Error("Keine Firebase-Benutzer-ID");
 
-    updateAuthUI();
-    cloudReady=true;
+await loadUserRole();
+cloudReady=true;
     setCloudStatus("syncing","☁ Erster Sync…");
 
     const migrationKey="wildlife-v11-cloud-migrated";
@@ -134,12 +162,24 @@ async function initFirebase(){
     subscribeCloud();
 
     // Keep UI/state current after login changes.
-    firebase.auth().onAuthStateChanged(user=>{
-      if(!user)return;
-      currentUser=user;
-      cloudReady=true;
-      updateAuthUI();
-    });
+  firebase.auth().onAuthStateChanged(async user=>{
+   if(!user){
+    currentUser=null; 
+    currentUserRole="user";
+    cloudReady=false;
+    updateAuthUI();
+    return;
+  }
+
+  currentUser=user;
+  cloudReady=true;
+  await loadUserRole();
+});
+
+  currentUser=user;
+  cloudReady=true;
+  await loadUserRole();
+});
   }catch(err){
     console.error("Firebase init failed",err);
     cloudReady=false;
@@ -152,7 +192,14 @@ async function initFirebase(){
 function displayUserLabel(user){
   if(!user)return"👤 Offline";
   if(user.isAnonymous)return"👤 Gast";
-  return `👤 ${user.displayName||user.email||"Konto"}`;
+
+  const name=user.displayName||user.email||"Konto";
+
+  if(currentUserRole==="admin"){
+    return `👑 ${name}`;
+  }
+
+  return `👤 ${name}`;
 }
 function updateAuthUI(){
   const user=(window.firebase&&firebase.auth)?firebase.auth().currentUser:currentUser;
