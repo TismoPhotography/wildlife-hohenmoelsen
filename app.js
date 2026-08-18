@@ -564,48 +564,153 @@ qs("#sightingSpotSelect").addEventListener("change",e=>{
 });
 
 qs("#spotForm").addEventListener("submit",async e=>{
-  e.preventDefault();const f=new FormData(e.currentTarget);
-  const spot={id:nextSpotId(),name:f.get("name").trim(),type:f.get("type"),status:f.get("status"),lat:Number(String(f.get("lat")).replace(",",".")),lng:Number(String(f.get("lng")).replace(",",".")),habitatCode:f.get("habitatCode"),vegetation:f.get("vegetation").trim(),waterSource:f.get("waterSource"),waterDistance:f.get("waterDistance")===""?null:Number(f.get("waterDistance")),mammals:split(f.get("mammals")),birds:split(f.get("birds")),mammalScore:Number(f.get("mammalScore")),birdScore:Number(f.get("birdScore")),bestTime:f.get("bestTime").trim(),bestSeason:f.get("bestSeason").trim(),accessNotes:f.get("accessNotes").trim(),photoNotes:f.get("photoNotes").trim(),notes:f.get("notes").trim(),coordConfidence:f.get("coordConfidence"),sourceType:f.get("sourceType"),createdBy:currentUser?.uid||"local"};
-  data.spots.push(spot);saveData();renderMarkers();updateSpotSelect();spotDialog.close();if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
-  if(cloudReady){try{setCloudStatus("syncing","☁ Speichern…");await putSpotCloud(spot)}catch(err){console.error(err);setCloudStatus("offline","☁ Sync-Fehler")}}
+  e.preventDefault();
+  const f=new FormData(e.currentTarget);
+
+  const spot={
+    id:nextSpotId(),
+    name:f.get("name").trim(),
+    type:f.get("type"),
+    status:f.get("status"),
+    lat:Number(String(f.get("lat")).replace(",",".")),
+    lng:Number(String(f.get("lng")).replace(",",".")),
+    habitatCode:f.get("habitatCode"),
+    vegetation:f.get("vegetation").trim(),
+    waterSource:f.get("waterSource"),
+    waterDistance:f.get("waterDistance")===""?null:Number(f.get("waterDistance")),
+    mammals:split(f.get("mammals")),
+    birds:split(f.get("birds")),
+    mammalScore:Number(f.get("mammalScore")),
+    birdScore:Number(f.get("birdScore")),
+    bestTime:f.get("bestTime").trim(),
+    bestSeason:f.get("bestSeason").trim(),
+    accessNotes:f.get("accessNotes").trim(),
+    photoNotes:f.get("photoNotes").trim(),
+    notes:f.get("notes").trim(),
+    coordConfidence:f.get("coordConfidence"),
+    sourceType:f.get("sourceType"),
+    createdBy:currentUser?.uid||"local"
+  };
+
+  data.spots.push(spot);
+  saveData();
+  renderMarkers();
+  updateSpotSelect();
+  spotDialog.close();
+
+  if(pickPreview){
+    map.removeLayer(pickPreview);
+    pickPreview=null;
+  }
+
+  if(cloudReady){
+    try{
+      setCloudStatus("syncing","☁ Speichern…");
+
+      await putSpotCloud(spot);
+
+      await logActivity(
+        "create",
+        "spot",
+        spot.id,
+        {
+          name:spot.name,
+          type:spot.type,
+          status:spot.status
+        }
+      );
+
+    }catch(err){
+      console.error(err);
+      setCloudStatus("offline","☁ Sync-Fehler");
+    }
+  }
 });
 
 qs("#sightingForm").addEventListener("submit",async e=>{
-  e.preventDefault();const f=new FormData(e.currentTarget),spotId=f.get("spotId"),linked=data.spots.find(s=>s.id===spotId);
-  let lat=Number(String(f.get("lat")||"").replace(",",".")),lng=Number(String(f.get("lng")||"").replace(",","."));
-  if(!Number.isFinite(lat)||!Number.isFinite(lng)){if(linked){lat=linked.lat;lng=linked.lng}else{alert("Bitte einen Punkt auf der Karte auswählen oder einen Spot zuordnen.");return}}
-  const group=f.get("group"),species=f.get("species").trim();
-  const sighting={id:nextSightingId(),spotId,group,species,count:Number(f.get("count"))||1,lat,lng,date:f.get("date"),time:f.get("time"),behavior:f.get("behavior"),distance:f.get("distance")===""?null:Number(f.get("distance")),direction:f.get("direction").trim(),notes:f.get("notes").trim(),createdBy:currentUser?.uid||"local"};
-  data.sightings.push(sighting);
-  if(linked){const key=group==="mammal"?"mammals":"birds";linked[key]=Array.from(new Set([...(linked[key]||[]),species]));linked.status="bestätigt"}
-  saveData();renderMarkers();sightingDialog.close();if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
-if(cloudReady){
-  try{
-    setCloudStatus("syncing","☁ Speichern…");
+  e.preventDefault();
 
-    await putSightingCloud(sighting);
+  const f=new FormData(e.currentTarget);
+  const spotId=f.get("spotId");
+  const linked=data.spots.find(s=>s.id===spotId);
 
+  let lat=Number(String(f.get("lat")||"").replace(",","."));
+  let lng=Number(String(f.get("lng")||"").replace(",","."));
+
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)){
     if(linked){
-      await putSpotCloud(linked);
+      lat=linked.lat;
+      lng=linked.lng;
+    }else{
+      alert("Bitte einen Punkt auf der Karte auswählen oder einen Spot zuordnen.");
+      return;
     }
-
-    await logActivity(
-      "create",
-      "sighting",
-      sighting.id,
-      {
-        species:sighting.species,
-        group:sighting.group,
-        count:sighting.count,
-        spotId:sighting.spotId||null
-      }
-    );
-
-  }catch(err){
-    console.error(err);
-    setCloudStatus("offline","☁ Sync-Fehler");
   }
-}
+
+  const group=f.get("group");
+  const species=f.get("species").trim();
+
+  const sighting={
+    id:nextSightingId(),
+    spotId,
+    group,
+    species,
+    count:Number(f.get("count"))||1,
+    lat,
+    lng,
+    date:f.get("date"),
+    time:f.get("time"),
+    behavior:f.get("behavior"),
+    distance:f.get("distance")===""?null:Number(f.get("distance")),
+    direction:f.get("direction").trim(),
+    notes:f.get("notes").trim(),
+    createdBy:currentUser?.uid||"local"
+  };
+
+  data.sightings.push(sighting);
+
+  if(linked){
+    const key=group==="mammal"?"mammals":"birds";
+    linked[key]=Array.from(new Set([...(linked[key]||[]),species]));
+    linked.status="bestätigt";
+  }
+
+  saveData();
+  renderMarkers();
+  sightingDialog.close();
+
+  if(pickPreview){
+    map.removeLayer(pickPreview);
+    pickPreview=null;
+  }
+
+  if(cloudReady){
+    try{
+      setCloudStatus("syncing","☁ Speichern…");
+
+      await putSightingCloud(sighting);
+
+      if(linked){
+        await putSpotCloud(linked);
+      }
+
+      await logActivity(
+        "create",
+        "sighting",
+        sighting.id,
+        {
+          species:sighting.species,
+          group:sighting.group,
+          count:sighting.count,
+          spotId:sighting.spotId||null
+        }
+      );
+
+    }catch(err){
+      console.error(err);
+      setCloudStatus("offline","☁ Sync-Fehler");
+    }
+  }
 });
 
 qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:16,enableHighAccuracy:true}));
