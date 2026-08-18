@@ -91,6 +91,24 @@ function setCloudStatus(state,text){
 function cleanForFirestore(obj){
   return JSON.parse(JSON.stringify(obj,(k,v)=>v===undefined?null:v));
 }
+async function logActivity(action,entityType,entityId,details={}){
+  if(!db||!currentUser||currentUser.isAnonymous)return;
+
+  try{
+    await db.collection("activity").add(cleanForFirestore({
+      action,
+      entityType,
+      entityId:entityId||null,
+      details,
+      userId:currentUser.uid,
+      userName:currentUser.displayName||"",
+      userEmail:currentUser.email||"",
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    }));
+  }catch(err){
+    console.error("Aktivität konnte nicht protokolliert werden:",err);
+  }
+}
 async function putSpotCloud(spot){
   if(!cloudReady||!db)return;
   await db.collection("spots").doc(String(spot.id)).set(cleanForFirestore({...spot,updatedBy:currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),{merge:true});
@@ -553,7 +571,33 @@ qs("#sightingForm").addEventListener("submit",async e=>{
   data.sightings.push(sighting);
   if(linked){const key=group==="mammal"?"mammals":"birds";linked[key]=Array.from(new Set([...(linked[key]||[]),species]));linked.status="bestätigt"}
   saveData();renderMarkers();sightingDialog.close();if(pickPreview){map.removeLayer(pickPreview);pickPreview=null}
-  if(cloudReady){try{setCloudStatus("syncing","☁ Speichern…");await putSightingCloud(sighting);if(linked)await putSpotCloud(linked)}catch(err){console.error(err);setCloudStatus("offline","☁ Sync-Fehler")}}
+if(cloudReady){
+  try{
+    setCloudStatus("syncing","☁ Speichern…");
+
+    await putSightingCloud(sighting);
+
+    if(linked){
+      await putSpotCloud(linked);
+    }
+
+    await logActivity(
+      "create",
+      "sighting",
+      sighting.id,
+      {
+        species:sighting.species,
+        group:sighting.group,
+        count:sighting.count,
+        spotId:sighting.spotId||null
+      }
+    );
+
+  }catch(err){
+    console.error(err);
+    setCloudStatus("offline","☁ Sync-Fehler");
+  }
+}
 });
 
 qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:16,enableHighAccuracy:true}));
