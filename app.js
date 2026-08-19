@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=12;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=13;
 
-const seed={schemaVersion:12,spots:[],sightings:[]};
+const seed={schemaVersion:13,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -726,6 +726,8 @@ function qs(s){return document.querySelector(s)}
 
 
 const SPECIES_PROFILES=[
+  {name:"Rotwild",icon:"🦌",group:"mammal",hours:[[4,9],[17,24]],habitats:["WFK","DW","BR","WI"],water:true,season:"Ganzjährig; besonders gut im Herbst",food:"Gräser, Kräuter, Blätter, Triebe, Rinde, Feldfrüchte",note:"Große, störungsarme Wald-Offenland-Komplexe sind besonders interessant. Punkte in der App sind Beobachtungs-/Potenzialzonen, keine veröffentlichten Einstände."},
+  {name:"Damwild",icon:"🦌",group:"mammal",hours:[[4,10],[16,24]],habitats:["WFK","DW","BR","WI","AF"],water:true,season:"Ganzjährig; Brunft im Herbst",food:"Gräser, Kräuter, Blätter, Knospen, Früchte und Feldfrüchte",note:"Bevorzugt strukturreiche Wald-Offenland-Landschaften. Die App zeigt keine sensiblen Ruhe- oder Einstandsorte."},
   {name:"Reh",icon:"🦌",group:"mammal",hours:[[4,8],[18,24]],habitats:["WFK","WI","HG","BR"],water:false,season:"Ganzjährig",food:"Gräser, Kräuter, Knospen, Blätter, Feldfrüchte",note:"Schwerpunkt meist Dämmerung; Störung und Jahreszeit verschieben Aktivität."},
   {name:"Wildschwein",icon:"🐗",group:"mammal",hours:[[19,24],[0,6]],habitats:["DW","BR","GW","AF"],water:true,season:"Ganzjährig",food:"Wurzeln, Früchte, Eicheln, Feldfrüchte, Wirbellose",note:"Überwiegend dämmerungs-/nachtaktiv; Suhlen und Deckung sind relevant."},
   {name:"Fuchs",icon:"🦊",group:"mammal",hours:[[19,24],[0,7]],habitats:["WFK","HG","AF","BR"],water:false,season:"Ganzjährig",food:"Kleinsäuger, Vögel, Wirbellose, Früchte",note:"Oft in Dämmerung und Nacht; auch tagsüber möglich."},
@@ -735,6 +737,160 @@ const SPECIES_PROFILES=[
   {name:"Neuntöter",icon:"🐦",group:"bird",hours:[[6,18]],habitats:["HG","BR","WFK"],water:false,season:"Spätfrühling–Sommer",food:"Große Insekten, kleine Wirbeltiere",note:"Strukturreiche Hecken und Gebüsche; Brutplätze nicht annähern."},
   {name:"Wasservögel",icon:"🦆",group:"bird",hours:[[5,20]],habitats:["GW"],water:true,season:"Ganzjährig",food:"Je nach Art Wasserpflanzen, Wirbellose, Fische",note:"Gewässer vom öffentlichen Ufer/Weg beobachten."}
 ];
+
+
+// Regionale Großwild-Hinweiszonen für den Burgenlandkreis.
+// WICHTIG: Diese Datensätze sind bewusst grob zentrierte Beobachtungs-/Habitat-Zonen.
+// Sie stellen KEINE exakten Wildstandorte, Einstände, Fütterungen oder garantierten Sichtungen dar.
+const REGIONAL_BIG_GAME_ZONES=[
+  {
+    id:"BLK-RW-ZIEGELRODA",
+    name:"Ziegelrodaer Forst – Rotwildgebiet",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:51.335,lng:11.585,habitatCode:"WFK",
+    vegetation:"Großer zusammenhängender Waldkomplex mit Wald-Offenland-Übergängen.",
+    waterSource:"Waldgewässer / Gräben im Großraum",waterDistance:null,
+    mammals:["Rotwild"],birds:[],mammalScore:5,birdScore:2,
+    bestTime:"Dämmerung; nur von öffentlichen Wegen und mit großem Abstand",
+    bestSeason:"Ganzjährig; erhöhte Aktivität im Herbst",
+    accessNotes:"Nur öffentliche Wege nutzen; Ruhebereiche nicht betreten.",
+    photoNotes:"Teleobjektiv verwenden und Distanz halten.",
+    notes:"Quellenbasiertes Vorkommensgebiet. Marker ist eine grobe Gebietszentrierung und ausdrücklich keine exakte Sichtungs- oder Einstandskoordinate.",
+    coordConfidence:"approx",sourceType:"official",createdBy:"regional-dataset"
+  },
+  {
+    id:"BLK-RW-NEBRA",
+    name:"Nebra / Unstruttal – Rotwild-Potenzial",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:51.275,lng:11.575,habitatCode:"WFK",
+    vegetation:"Wald-Offenland-Mosaik am südlichen Rand größerer Waldkomplexe.",
+    waterSource:"Unstruttal im weiteren Umfeld",waterDistance:null,
+    mammals:["Rotwild"],birds:[],mammalScore:4,birdScore:2,
+    bestTime:"Frühe Morgen- und Abenddämmerung",
+    bestSeason:"Ganzjährig",
+    accessNotes:"Beobachtung nur von öffentlichen Wegen / Waldrändern.",
+    photoNotes:"Keine Annäherung an Wild oder Ruhebereiche.",
+    notes:"Habitat-/Beobachtungspotenzial im Umfeld des belegten Rotwild-Großraums; keine bestätigte Einzelsichtung an diesem Marker.",
+    coordConfidence:"approx",sourceType:"habitat",createdBy:"regional-dataset"
+  },
+  {
+    id:"BLK-DW-FINNE",
+    name:"Finne – Damwildgebiet",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:51.235,lng:11.565,habitatCode:"WFK",
+    vegetation:"Wald-Offenland-Komplex der Finne.",
+    waterSource:"Bäche / Kleingewässer im Großraum",waterDistance:null,
+    mammals:["Damwild"],birds:[],mammalScore:5,birdScore:2,
+    bestTime:"Morgen- und Abenddämmerung",
+    bestSeason:"Ganzjährig; Herbst besonders interessant",
+    accessNotes:"Öffentliche Wege nutzen; Wild nicht verfolgen.",
+    photoNotes:"Aus Distanz beobachten.",
+    notes:"Quellenbasiertes regionales Damwild-Vorkommensgebiet; grobe Beobachtungszone, kein Einstand.",
+    coordConfidence:"approx",sourceType:"official",createdBy:"regional-dataset"
+  },
+  {
+    id:"BLK-DW-FREYBURG",
+    name:"Freyburg / Möllern – Damwild-Großraum",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:51.215,lng:11.735,habitatCode:"WFK",
+    vegetation:"Strukturreiche Wald-, Hang- und Offenlandbereiche.",
+    waterSource:"Saale/Unstrut im weiteren Umfeld",waterDistance:null,
+    mammals:["Damwild"],birds:[],mammalScore:5,birdScore:2,
+    bestTime:"Dämmerung",
+    bestSeason:"Ganzjährig",
+    accessNotes:"Nur öffentlich zugängliche Wege und Aussichtspunkte verwenden.",
+    photoNotes:"Große Distanz einhalten.",
+    notes:"Regional belegter Damwild-Großraum; Marker dient der Orientierung und ist keine exakte Tierkoordinate.",
+    coordConfidence:"approx",sourceType:"official",createdBy:"regional-dataset"
+  },
+  {
+    id:"BLK-DW-STEINBURG",
+    name:"Steinburg / Eckartsberga – Damwild-Großraum",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:51.145,lng:11.555,habitatCode:"WFK",
+    vegetation:"Wald-Offenland-Landschaft im nordwestlichen Burgenlandkreis.",
+    waterSource:"lokale Bäche / Kleingewässer",waterDistance:null,
+    mammals:["Damwild"],birds:[],mammalScore:5,birdScore:2,
+    bestTime:"Morgen- und Abenddämmerung",
+    bestSeason:"Ganzjährig",
+    accessNotes:"Öffentliche Wege nutzen.",
+    photoNotes:"Nicht in Deckungsbereiche hineinlaufen.",
+    notes:"Regional belegter Damwild-Großraum; bewusst grob gesetzter Marker.",
+    coordConfidence:"approx",sourceType:"official",createdBy:"regional-dataset"
+  },
+  {
+    id:"BLK-DW-BILLRODA",
+    name:"Billroda – Damwild-Großraum",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:51.205,lng:11.455,habitatCode:"WFK",
+    vegetation:"Wald- und Offenlandmosaik der Finne-Region.",
+    waterSource:"lokale Gewässer",waterDistance:null,
+    mammals:["Damwild"],birds:[],mammalScore:5,birdScore:2,
+    bestTime:"Dämmerung",
+    bestSeason:"Ganzjährig",
+    accessNotes:"Nur öffentliche Wege; sensible Bereiche meiden.",
+    photoNotes:"Distanz halten.",
+    notes:"Regional belegter Damwild-Großraum; keine exakte Sichtungskoordinate.",
+    coordConfidence:"approx",sourceType:"official",createdBy:"regional-dataset"
+  },
+  {
+    id:"BLK-DW-LOSSA",
+    name:"Lossa / Finne – Damwild-Potenzial",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:51.220,lng:11.420,habitatCode:"WFK",
+    vegetation:"Waldreiche Finne-Landschaft mit Offenlandübergängen.",
+    waterSource:"lokale Bäche",waterDistance:null,
+    mammals:["Damwild"],birds:[],mammalScore:4,birdScore:2,
+    bestTime:"Dämmerung",
+    bestSeason:"Ganzjährig",
+    accessNotes:"Öffentliche Wege nutzen.",
+    photoNotes:"Wild nicht bedrängen.",
+    notes:"Regionaler Hinweis-/Potenzialraum; keine bestätigte Einzelsichtung am Marker.",
+    coordConfidence:"approx",sourceType:"habitat",createdBy:"regional-dataset"
+  },
+  {
+    id:"BLK-DW-PRIESSNITZ",
+    name:"Prießnitz / Saale-Unstrut – Damwild-Potenzial",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:51.115,lng:11.780,habitatCode:"WFK",
+    vegetation:"Waldinseln, Feldgehölze und Offenlandkanten.",
+    waterSource:"Bäche / Saale-Unstrut-Großraum",waterDistance:null,
+    mammals:["Damwild"],birds:[],mammalScore:4,birdScore:2,
+    bestTime:"Frühmorgens und abends",
+    bestSeason:"Ganzjährig",
+    accessNotes:"Von öffentlichen Wegen beobachten.",
+    photoNotes:"Keine Annäherung.",
+    notes:"Regionaler Hinweis-/Habitatraum; keine exakte Sichtungskoordinate.",
+    coordConfidence:"approx",sourceType:"habitat",createdBy:"regional-dataset"
+  },
+  {
+    id:"BLK-RW-ZEITZER",
+    name:"Zeitzer Forst – Rotwild-Habitatpotenzial",
+    type:"Beobachtungszone",status:"potenziell",
+    lat:50.980,lng:12.085,habitatCode:"WFK",
+    vegetation:"Großer Waldkomplex mit störungsarmen Teilbereichen und Wald-Offenland-Kanten.",
+    waterSource:"Waldgewässer / Bäche",waterDistance:null,
+    mammals:["Rotwild"],birds:[],mammalScore:3,birdScore:2,
+    bestTime:"Dämmerung",
+    bestSeason:"Ganzjährig",
+    accessNotes:"Nur freigegebene öffentliche Wege nutzen.",
+    photoNotes:"Keine Suche nach Einständen.",
+    notes:"Habitat-Prognose. Für diesen Marker wird keine konkrete Rotwildsichtung behauptet.",
+    coordConfidence:"review",sourceType:"habitat",createdBy:"regional-dataset"
+  }
+];
+
+function ensureRegionalBigGameZones(){
+  if(!Array.isArray(data.spots))data.spots=[];
+  let changed=false;
+  for(const zone of REGIONAL_BIG_GAME_ZONES){
+    if(!data.spots.some(s=>s.id===zone.id)){
+      data.spots.push({...zone});
+      changed=true;
+    }
+  }
+  if(changed)saveData();
+}
 
 const AUDIT={
   "WHM-001":{level:"confirmed",text:"Exakte Nutzerkoordinate; bestätigte Rehsichtung."},
@@ -752,7 +908,7 @@ function qualityLabel(v){
   return'<span class="quality-warn">≈ grobe Zone</span>';
 }
 function sourceLabel(v){
-  return v==="own"?"Eigene Beobachtung":v==="official"?"Amtliche/Fachquelle":"Habitat-Prognose";
+  return v==="own"?"Eigene Beobachtung":v==="official"?"Quellenbasiertes Vorkommensgebiet":"Habitat-/Potenzialprognose";
 }
 function timeMatches(profile,hour){return profile.hours.some(([a,b])=>hour>=a&&hour<b)}
 function spotSpecies(spot){
@@ -982,6 +1138,7 @@ map.on("locationfound",e=>{
   lastUserLocation={lat:e.latlng.lat,lng:e.latlng.lng};
 });
 
+ensureRegionalBigGameZones();
 updateSpotSelect();renderMarkers();setTimeout(refreshMapSize,80);
 initAuthUiHandlers();
 initFirebase();
