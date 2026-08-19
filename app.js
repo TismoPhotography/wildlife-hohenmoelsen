@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=13;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=14;
 
-const seed={schemaVersion:13,spots:[],sightings:[]};
+const seed={schemaVersion:14,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -415,17 +415,74 @@ function iconFor(kind,spot=null){
 }
 function previewIcon(){return L.divIcon({className:"pick-preview",html:'<div class="marker-pin confirmed"><span>✚</span></div>',iconSize:[34,34],iconAnchor:[17,32]})}
 function spotHasWater(s){return Boolean(s.waterSource)||s.type==="Wasserstelle"}
+
+const SPECIES_FILTERS={
+  roe:["reh","rehwild"],
+  reddeer:["rotwild","rothirsch"],
+  fallowdeer:["damwild","damhirsch"],
+  hare:["feldhase","hase"],
+  fox:["fuchs","rotfuchs"]
+};
+
+function normalizedSpeciesName(v){
+  return String(v||"").trim().toLowerCase();
+}
+function matchesSpeciesFilter(value,filter){
+  const name=normalizedSpeciesName(value);
+  const aliases=SPECIES_FILTERS[filter]||[];
+  return aliases.some(alias=>name===alias||name.includes(alias));
+}
+function spotMatchesSpeciesFilter(spot,filter){
+  return (spot.mammals||[]).some(name=>matchesSpeciesFilter(name,filter));
+}
+function sightingMatchesSpeciesFilter(sighting,filter){
+  return sighting.group==="mammal"&&matchesSpeciesFilter(sighting.species,filter);
+}
+
+function installSpeciesFilters(){
+  const scroller=document.querySelector(".filter-scroll");
+  if(!scroller||scroller.dataset.speciesFiltersInstalled==="yes")return;
+
+  const mammalBtn=scroller.querySelector('[data-filter="mammal"]');
+  const birdBtn=scroller.querySelector('[data-filter="bird"]');
+
+  const buttons=[
+    ["roe","🦌 Rehwild"],
+    ["reddeer","🦌 Rotwild"],
+    ["fallowdeer","🦌 Damwild"],
+    ["hare","🐇 Feldhase"],
+    ["fox","🦊 Fuchs"]
+  ];
+
+  if(mammalBtn){
+    for(const [filter,label] of buttons){
+      const btn=document.createElement("button");
+      btn.className="filter";
+      btn.dataset.filter=filter;
+      btn.textContent=label;
+      scroller.insertBefore(btn,mammalBtn);
+    }
+    mammalBtn.remove();
+  }
+
+  if(birdBtn){
+    birdBtn.textContent="🐦 Vögel";
+  }
+
+  scroller.dataset.speciesFiltersInstalled="yes";
+}
+
 function filterSpot(s){
   if(currentFilter==="confirmed")return s.status==="bestätigt";
   if(currentFilter==="potential")return s.status!=="bestätigt";
-  if(currentFilter==="mammal")return(s.mammals||[]).length>0;
+  if(SPECIES_FILTERS[currentFilter])return spotMatchesSpeciesFilter(s,currentFilter);
   if(currentFilter==="bird")return(s.birds||[]).length>0;
   if(currentFilter==="water")return spotHasWater(s);
   if(currentFilter==="highseat")return s.type==="Hochsitz";
   return true;
 }
 function filterSighting(s){
-  if(currentFilter==="mammal")return s.group==="mammal";
+  if(SPECIES_FILTERS[currentFilter])return sightingMatchesSpeciesFilter(s,currentFilter);
   if(currentFilter==="bird")return s.group==="bird";
   return currentFilter==="all"||currentFilter==="confirmed";
 }
@@ -480,6 +537,8 @@ window.openSpotPanel=function(id){
   qs("#spotPanel").classList.remove("hidden")
 };
 qs("#closePanelBtn").addEventListener("click",()=>qs("#spotPanel").classList.add("hidden"));
+
+installSpeciesFilters();
 
 document.querySelectorAll(".filter").forEach(btn=>btn.addEventListener("click",()=>{
   document.querySelectorAll(".filter").forEach(b=>b.classList.remove("active"));btn.classList.add("active");currentFilter=btn.dataset.filter;renderMarkers()
