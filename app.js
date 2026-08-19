@@ -147,6 +147,7 @@ function subscribeCloud(){
     if(!cloudReady)return;
     cloudApplying=true;
     data=migrateData({schemaVersion:SCHEMA_VERSION,spots:cloudSpots,sightings:cloudSightings});
+    ensureRegionalBigGameZones();
     localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
     renderMarkers();updateSpotSelect();
     cloudApplying=false;
@@ -179,6 +180,12 @@ if(!currentUser)throw new Error("Keine Firebase-Benutzer-ID");
 await loadUserRole();
 cloudReady=true;
     setCloudStatus("syncing","☁ Erster Sync…");
+
+    try{
+      await syncRegionalBigGameZonesToCloud();
+    }catch(err){
+      console.error("Regionale Großwild-Zonen konnten nicht in die Cloud geschrieben werden:",err);
+    }
 
     const migrationKey="wildlife-v11-cloud-migrated";
     if(localStorage.getItem(migrationKey)!=="yes"){
@@ -890,6 +897,24 @@ function ensureRegionalBigGameZones(){
     }
   }
   if(changed)saveData();
+}
+
+async function syncRegionalBigGameZonesToCloud(){
+  if(!cloudReady||!db||!currentUser)return;
+  const batch=db.batch();
+  for(const zone of REGIONAL_BIG_GAME_ZONES){
+    const ref=db.collection("spots").doc(String(zone.id));
+    batch.set(
+      ref,
+      cleanForFirestore({
+        ...zone,
+        updatedBy:currentUser.uid,
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      }),
+      {merge:true}
+    );
+  }
+  await batch.commit();
 }
 
 const AUDIT={
