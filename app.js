@@ -421,7 +421,8 @@ const SPECIES_FILTERS={
   reddeer:["rotwild","rothirsch"],
   fallowdeer:["damwild","damhirsch"],
   hare:["feldhase","hase"],
-  fox:["fuchs","rotfuchs"]
+  fox:["fuchs","rotfuchs"],
+  wildboar:["wildschwein","schwarzwild"]
 };
 
 function normalizedSpeciesName(v){
@@ -451,7 +452,8 @@ function installSpeciesFilters(){
     ["reddeer","🦌 Rotwild"],
     ["fallowdeer","🦌 Damwild"],
     ["hare","🐇 Feldhase"],
-    ["fox","🦊 Fuchs"]
+    ["fox","🦊 Fuchs"],
+    ["wildboar","🐗 Wildschwein"]
   ];
 
   if(mammalBtn){
