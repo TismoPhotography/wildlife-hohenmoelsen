@@ -310,12 +310,33 @@
     }
   }
 
-  function syncVisibility() {
+  async function syncVisibility() {
     injectUi();
-    const btn = document.getElementById(ADMIN_BUTTON_ID);
-    if (btn) btn.classList.toggle("hidden", !isAdmin());
 
-    if (!isAdmin()) {
+    const btn = document.getElementById(ADMIN_BUTTON_ID);
+    let allowed = isAdmin();
+
+    // Robust fallback: Rolle direkt aus Firestore prüfen.
+    // Dadurch hängt der Admin-Button nicht vom Timing des Rollen-Loads in app.js ab.
+    try {
+      const database = getDb();
+      const user = getUser() || window.firebase?.auth?.().currentUser;
+
+      if (!allowed && database && user && !user.isAnonymous) {
+        const snap = await database.collection("users").doc(user.uid).get();
+
+        if (snap.exists) {
+          const userData = snap.data() || {};
+          allowed = userData.role === "admin" && userData.active !== false;
+        }
+      }
+    } catch (err) {
+      console.warn("Admin-Sichtbarkeit konnte nicht direkt geprüft werden:", err);
+    }
+
+    if (btn) btn.classList.toggle("hidden", !allowed);
+
+    if (!allowed) {
       closeAdmin();
     }
   }
@@ -741,12 +762,13 @@
       }
 
       firebase.auth().onAuthStateChanged(async user => {
-        setTimeout(syncVisibility, 250);
-
         if (user && !user.isAnonymous) {
           await ensureOwnUserProfile();
-          setTimeout(syncVisibility, 250);
         }
+
+        await syncVisibility();
+        setTimeout(syncVisibility, 500);
+        setTimeout(syncVisibility, 1500);
       });
     };
 
