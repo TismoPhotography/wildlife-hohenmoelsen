@@ -1,0 +1,37 @@
+SichtungsApp – Admin-Menü v15
+
+1. admin.js
+   - Datei in die Hauptwurzel des GitHub-Repositories hochladen.
+
+2. index.html
+   Suche:
+     <script src="app.js?v=14"></script>
+
+   Direkt darunter einfügen:
+     <script src="admin.js?v=15"></script>
+
+   Optional kannst du die Versionsanzeige im Kopf von v14 auf v15 ändern.
+
+3. .github/workflows/android-apk.yml
+   - Den vorhandenen Inhalt komplett durch die beiliegende android-apk.yml ersetzen.
+   - Wichtig: admin.js steht jetzt sowohl bei "paths" als auch im "cp"-Befehl.
+
+4. Test
+   - Zuerst WebApp öffnen.
+   - Mit Admin-Konto anmelden.
+   - In der Werkzeugleiste muss "👑 Admin" erscheinen.
+   - Prüfen: Aktivitäten, Nutzer, Spots, Sichtungen.
+   - Erst danach APK-Workflow verwenden.
+
+Admin-Funktionen:
+- Aktivitätsprotokoll lesen
+- Nutzer + letzte protokollierte Aktion anzeigen
+- Rollen user/admin ändern
+- Nutzer aktivieren/sperren
+- Spots löschen
+- Sichtungen löschen
+- Regionale BLK-/System-Spots sind gegen versehentliches Löschen geschützt
+
+Hinweis zu bestehenden Nutzern:
+Ein users-Dokument wird für angemeldete Nutzer automatisch angelegt, wenn noch keines existiert.
+Bereits existierende Nutzer ohne users-Dokument erscheinen erst, nachdem sie die neue Version einmal geöffnet haben.
