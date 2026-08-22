@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=16;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=17;
 
-const seed={schemaVersion:16,spots:[],sightings:[]};
+const seed={schemaVersion:17,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -505,32 +505,136 @@ function filterSighting(s){
   return currentFilter==="all"||currentFilter==="confirmed";
 }
 
-// v16: Grobe Rotwild-/Damwild-Potenzialflächen.
-// Die Radien visualisieren bewusst nur regionale Beobachtungs-/Habitatbereiche.
-// Sie sind KEINE exakten Reviergrenzen, Einstände oder Tierpositionen.
-const REGIONAL_BIG_GAME_AREAS=[
-  {id:"AREA-RW-ZIEGELRODA",species:"Rotwild",filter:"reddeer",name:"Ziegelrodaer Forst – Rotwild-Großraum",lat:51.335,lng:11.585,radiusKm:8.5,sourceType:"official",confidence:"high",note:"Quellenbasiertes regionales Vorkommensgebiet; Fläche bewusst grob visualisiert."},
-  {id:"AREA-RW-NEBRA",species:"Rotwild",filter:"reddeer",name:"Nebra / Unstruttal – Rotwild-Potenzial",lat:51.275,lng:11.575,radiusKm:6.5,sourceType:"habitat",confidence:"medium",note:"Habitat-/Beobachtungspotenzial im Umfeld des belegten Rotwild-Großraums."},
-  {id:"AREA-RW-ZEITZER",species:"Rotwild",filter:"reddeer",name:"Zeitzer Forst – Rotwild-Habitatpotenzial",lat:50.980,lng:12.085,radiusKm:7.0,sourceType:"habitat",confidence:"review",note:"Habitat-Prognose; keine konkrete Rotwildsichtung an einer bestimmten Stelle wird behauptet."},
+// v17: Regionale Säugetier-Potenzialflächen im Burgenlandkreis.
+//
+// Datenklassen:
+//   sourceType:"official" = öffentlich belegter regionaler Vorkommenshinweis.
+//   sourceType:"habitat"  = aus öffentlich beschriebenen Landschaftsstrukturen
+//                           und artspezifischen Habitatansprüchen abgeleitete
+//                           Potenzialfläche.
+//
+// Alle Flächen sind absichtlich grob. Sie sind KEINE Reviergrenzen, Einstände,
+// Wurf-/Ruheplätze, Fütterungen oder garantierte Sichtungspositionen.
+const REGIONAL_MAMMAL_AREAS=[
+  // ROTWILD ---------------------------------------------------------------
+  {id:"MAM-RW-ZIEGELRODA",species:"Rotwild",filter:"reddeer",name:"Ziegelrodaer Forst – Rotwild-Vorkommensraum",
+   lat:51.335,lng:11.585,rxKm:11.0,ryKm:7.0,rotation:-12,sourceType:"official",confidence:"high",
+   note:"Der Ziegelrodaer Forst wird vom LJV Sachsen-Anhalt als Untersuchungsgebiet der Rotwildforschung geführt."},
+  {id:"MAM-RW-NEBRA",species:"Rotwild",filter:"reddeer",name:"Nebra / Unstruttal – Rotwild-Habitatpotenzial",
+   lat:51.275,lng:11.575,rxKm:7.0,ryKm:4.5,rotation:20,sourceType:"habitat",confidence:"medium",
+   note:"Wald-Offenland-Mosaik im Umfeld des belegten Ziegelrodaer Rotwildraums."},
+  {id:"MAM-RW-ZEITZER",species:"Rotwild",filter:"reddeer",name:"Zeitzer Forst – Rotwild-Habitatpotenzial",
+   lat:50.975,lng:12.070,rxKm:8.0,ryKm:5.0,rotation:-15,sourceType:"habitat",confidence:"review",
+   note:"Großer, ökologisch bedeutsamer Waldkomplex; die Fläche ist eine Habitat-Prognose und kein belegtes Rotwild-Kerngebiet."},
 
-  {id:"AREA-DW-FINNE",species:"Damwild",filter:"fallowdeer",name:"Finne – Damwild-Großraum",lat:51.235,lng:11.565,radiusKm:10.0,sourceType:"official",confidence:"high",note:"Quellenbasierter regionaler Damwild-Großraum; visualisierte Fläche ist keine exakte Bestandsgrenze."},
-  {id:"AREA-DW-FREYBURG",species:"Damwild",filter:"fallowdeer",name:"Freyburg / Möllern – Damwild-Großraum",lat:51.215,lng:11.735,radiusKm:6.5,sourceType:"official",confidence:"high",note:"Regional belegter Damwild-Großraum."},
-  {id:"AREA-DW-STEINBURG",species:"Damwild",filter:"fallowdeer",name:"Steinburg / Eckartsberga – Damwild-Großraum",lat:51.145,lng:11.555,radiusKm:7.0,sourceType:"official",confidence:"high",note:"Regional belegter Damwild-Großraum; keine exakte Tierposition."},
-  {id:"AREA-DW-BILLRODA",species:"Damwild",filter:"fallowdeer",name:"Billroda – Damwild-Großraum",lat:51.205,lng:11.455,radiusKm:5.5,sourceType:"official",confidence:"high",note:"Regional belegter Damwild-Großraum."},
-  {id:"AREA-DW-LOSSA",species:"Damwild",filter:"fallowdeer",name:"Lossa / Finne – Damwild-Potenzial",lat:51.220,lng:11.420,radiusKm:5.0,sourceType:"habitat",confidence:"medium",note:"Regionaler Hinweis-/Habitatraum; keine bestätigte Einzelsichtung am Flächenzentrum."},
-  {id:"AREA-DW-PRIESSNITZ",species:"Damwild",filter:"fallowdeer",name:"Prießnitz / Saale-Unstrut – Damwild-Potenzial",lat:51.115,lng:11.780,radiusKm:5.5,sourceType:"habitat",confidence:"medium",note:"Regionaler Hinweis-/Habitatraum; bewusst grobe Potenzialfläche."}
+  // DAMWILD ---------------------------------------------------------------
+  {id:"MAM-DW-FREYBURG",species:"Damwild",filter:"fallowdeer",name:"Freyburg / Möllern – Damwild-Hauptverbreitung",
+   lat:51.210,lng:11.740,rxKm:7.0,ryKm:4.8,rotation:10,sourceType:"official",confidence:"high",
+   note:"Von der Damwild-Hegegemeinschaft Finne–Saale als Hauptverbreitungsgebiet genannt."},
+  {id:"MAM-DW-STEINBURG",species:"Damwild",filter:"fallowdeer",name:"Steinburg / Eckartsberga – Damwild-Hauptverbreitung",
+   lat:51.145,lng:11.565,rxKm:8.0,ryKm:5.0,rotation:-10,sourceType:"official",confidence:"high",
+   note:"Von der Damwild-Hegegemeinschaft Finne–Saale als Hauptverbreitungsgebiet genannt."},
+  {id:"MAM-DW-BILLRODA",species:"Damwild",filter:"fallowdeer",name:"Billroda – Damwild-Hauptverbreitung",
+   lat:51.205,lng:11.455,rxKm:6.0,ryKm:4.5,rotation:0,sourceType:"official",confidence:"high",
+   note:"Von der Damwild-Hegegemeinschaft Finne–Saale als Hauptverbreitungsgebiet genannt."},
+  {id:"MAM-DW-FINNE",species:"Damwild",filter:"fallowdeer",name:"Finne – Damwild-Verbundraum",
+   lat:51.235,lng:11.565,rxKm:14.0,ryKm:6.5,rotation:5,sourceType:"official",confidence:"high",
+   note:"Grober Verbundraum der Hegegemeinschaft Finne–Saale; keine exakte Bestandsgrenze."},
+  {id:"MAM-DW-PRIESSNITZ",species:"Damwild",filter:"fallowdeer",name:"Prießnitz / Eulau – Damwild-Nachweisraum",
+   lat:51.120,lng:11.785,rxKm:5.5,ryKm:3.5,rotation:15,sourceType:"official",confidence:"medium",
+   note:"Prießnitz und Eulau werden als weitere Vorkommensbereiche genannt."},
+  {id:"MAM-DW-LOSSA",species:"Damwild",filter:"fallowdeer",name:"Lossa / westliche Finne – Damwild-Nachweisraum",
+   lat:51.220,lng:11.420,rxKm:6.0,ryKm:4.0,rotation:-5,sourceType:"official",confidence:"medium",
+   note:"Lossa wird als weiterer Vorkommensbereich der Hegegemeinschaft genannt."},
+  {id:"MAM-DW-ZIEGELRODA",species:"Damwild",filter:"fallowdeer",name:"Ziegelrodaer Forst – Damwild-Nachweisraum",
+   lat:51.335,lng:11.585,rxKm:7.0,ryKm:4.5,rotation:-10,sourceType:"official",confidence:"medium",
+   note:"Damwild wird laut Hegegemeinschaft bis zum Ziegelrodaer Forst gefunden."},
+
+  // REHWILD ---------------------------------------------------------------
+  {id:"MAM-REH-FINNE",species:"Rehwild",filter:"roe",name:"Finne / Unstrut – Rehwild-Potenzial",
+   lat:51.250,lng:11.585,rxKm:18.0,ryKm:9.0,rotation:5,sourceType:"habitat",confidence:"medium",
+   note:"Wald-, Gehölz-, Hang- und Offenlandmosaik mit zahlreichen Randstrukturen."},
+  {id:"MAM-REH-SAALE",species:"Rehwild",filter:"roe",name:"Saale-Unstrut / Naumburg-Freyburg – Rehwild-Potenzial",
+   lat:51.175,lng:11.805,rxKm:16.0,ryKm:8.0,rotation:15,sourceType:"habitat",confidence:"medium",
+   note:"Strukturreiche Hänge, Feldgehölze, Waldinseln, Grünland und Ackerflächen."},
+  {id:"MAM-REH-HM",species:"Rehwild",filter:"roe",name:"Lützen–Hohenmölsen–Teuchern – Rehwild-Potenzial",
+   lat:51.115,lng:12.080,rxKm:19.0,ryKm:9.0,rotation:-5,sourceType:"habitat",confidence:"medium",
+   note:"Agrarlandschaft mit Talzügen, Gehölzen, Rekultivierungs- und Sukzessionsflächen."},
+  {id:"MAM-REH-DROYSSIG",species:"Rehwild",filter:"roe",name:"Droyßiger-Zeitzer Forst / Schnaudertal – Rehwild-Potenzial",
+   lat:51.030,lng:12.055,rxKm:14.0,ryKm:8.0,rotation:-18,sourceType:"habitat",confidence:"medium",
+   note:"Waldreiche und kleinteilig strukturierte Landschaft mit ausgeprägten Wald-Offenland-Kanten."},
+  {id:"MAM-REH-ELSTER",species:"Rehwild",filter:"roe",name:"Weiße-Elster-Aue / Elsteraue – Rehwild-Potenzial",
+   lat:51.000,lng:12.170,rxKm:12.0,ryKm:5.5,rotation:18,sourceType:"habitat",confidence:"medium",
+   note:"Auennahe Gehölze, Grünland und angrenzende Offenlandflächen."},
+
+  // WILDSCHWEIN / SCHWARZWILD -------------------------------------------
+  {id:"MAM-WS-ZEITZER",species:"Wildschwein",filter:"wildboar",name:"Zeitzer Forst – Schwarzwild-Potenzial",
+   lat:50.975,lng:12.070,rxKm:9.0,ryKm:5.5,rotation:-15,sourceType:"habitat",confidence:"high",
+   note:"Großer Waldkomplex mit Deckung und angrenzenden Nahrungsflächen."},
+  {id:"MAM-WS-FINNE",species:"Wildschwein",filter:"wildboar",name:"Finne / Ziegelroda – Schwarzwild-Potenzial",
+   lat:51.285,lng:11.565,rxKm:15.0,ryKm:7.5,rotation:0,sourceType:"habitat",confidence:"high",
+   note:"Ausgedehnte Waldkomplexe mit Feld- und Grünlandübergängen."},
+  {id:"MAM-WS-DROYSSIG",species:"Wildschwein",filter:"wildboar",name:"Droyßig / Schnaudertal – Schwarzwild-Potenzial",
+   lat:51.035,lng:12.025,rxKm:10.0,ryKm:6.0,rotation:-20,sourceType:"habitat",confidence:"medium",
+   note:"Deckungsreiche Wald- und Gehölzbereiche mit angrenzendem Agrarland."},
+  {id:"MAM-WS-PROFEN",species:"Wildschwein",filter:"wildboar",name:"Profen / Bergbaufolgelandschaft – Schwarzwild-Potenzial",
+   lat:51.075,lng:12.155,rxKm:12.0,ryKm:6.5,rotation:-8,sourceType:"habitat",confidence:"medium",
+   note:"Sukzessions-, Aufforstungs- und Rekultivierungsflächen der Bergbaufolgelandschaft."},
+  {id:"MAM-WS-SAALE",species:"Wildschwein",filter:"wildboar",name:"Saale-Unstrut-Hänge – Schwarzwild-Potenzial",
+   lat:51.170,lng:11.800,rxKm:12.0,ryKm:6.0,rotation:15,sourceType:"habitat",confidence:"medium",
+   note:"Waldinseln, Hanggehölze, Weinbergsränder und Feldflächen bilden geeignete Deckungs-/Nahrungsmosaike."},
+
+  // FUCHS ----------------------------------------------------------------
+  {id:"MAM-FU-NORD",species:"Fuchs",filter:"fox",name:"Finne / Querfurter Platte – Fuchs-Potenzial",
+   lat:51.260,lng:11.610,rxKm:22.0,ryKm:10.0,rotation:5,sourceType:"habitat",confidence:"medium",
+   note:"Offenland, Waldränder und Feldgehölze bieten vielfältige Nahrungs- und Deckungsstrukturen."},
+  {id:"MAM-FU-SAALE",species:"Fuchs",filter:"fox",name:"Saale-Unstrut – Fuchs-Potenzial",
+   lat:51.165,lng:11.800,rxKm:18.0,ryKm:9.0,rotation:12,sourceType:"habitat",confidence:"medium",
+   note:"Kleinteilige Agrar-, Hang-, Gehölz- und Siedlungsrandlandschaft."},
+  {id:"MAM-FU-MITTE",species:"Fuchs",filter:"fox",name:"Weißenfels–Lützen–Hohenmölsen – Fuchs-Potenzial",
+   lat:51.125,lng:12.040,rxKm:23.0,ryKm:10.5,rotation:0,sourceType:"habitat",confidence:"medium",
+   note:"Offenland, Talzüge, Brachen, Feldgehölze und Siedlungsränder."},
+  {id:"MAM-FU-SUED",species:"Fuchs",filter:"fox",name:"Zeitz / Droyßiger-Zeitzer Forst – Fuchs-Potenzial",
+   lat:51.005,lng:12.095,rxKm:20.0,ryKm:10.0,rotation:-10,sourceType:"habitat",confidence:"medium",
+   note:"Wald-Offenland-Mosaik, Agrarflächen, Auen und Siedlungsränder."},
+
+  // FELDHASE --------------------------------------------------------------
+  {id:"MAM-HA-LUETZEN",species:"Feldhase",filter:"hare",name:"Lützen / westliche Agrarplatte – Feldhasen-Potenzial",
+   lat:51.255,lng:12.100,rxKm:18.0,ryKm:8.0,rotation:0,sourceType:"habitat",confidence:"medium",
+   note:"Großräumiges Offenland; Feldhase ist eine typische Charakterart des Offenlandes."},
+  {id:"MAM-HA-HM",species:"Feldhase",filter:"hare",name:"Hohenmölsen–Teuchern – Feldhasen-Potenzial",
+   lat:51.120,lng:12.070,rxKm:17.0,ryKm:8.0,rotation:-5,sourceType:"habitat",confidence:"medium",
+   note:"Acker-, Grünland- und Saumstrukturen außerhalb dichter Wald- und Siedlungsbereiche."},
+  {id:"MAM-HA-WEISSENFELS",species:"Feldhase",filter:"hare",name:"Weißenfelser Hochflächen – Feldhasen-Potenzial",
+   lat:51.195,lng:11.990,rxKm:15.0,ryKm:7.0,rotation:10,sourceType:"habitat",confidence:"medium",
+   note:"Überwiegend offene Agrarlandschaft; Tal- und Siedlungsbereiche sind nur Randbestandteil."},
+  {id:"MAM-HA-FINNE-SUED",species:"Feldhase",filter:"hare",name:"Bad Bibra / südliche Finne – Feldhasen-Potenzial",
+   lat:51.205,lng:11.600,rxKm:16.0,ryKm:7.0,rotation:8,sourceType:"habitat",confidence:"medium",
+   note:"Offenlandflächen und Säume zwischen Waldkomplexen."},
+  {id:"MAM-HA-NAUMBURG",species:"Feldhase",filter:"hare",name:"Naumburg / Saale-Unstrut-Offenland – Feldhasen-Potenzial",
+   lat:51.145,lng:11.805,rxKm:13.0,ryKm:6.0,rotation:12,sourceType:"habitat",confidence:"medium",
+   note:"Acker- und Grünlandbereiche auf Hochflächen; bewaldete Steilhänge sind weniger geeignet."},
+  {id:"MAM-HA-ZEITZ",species:"Feldhase",filter:"hare",name:"Zeitz / Elsteraue-Offenland – Feldhasen-Potenzial",
+   lat:51.015,lng:12.155,rxKm:15.0,ryKm:7.0,rotation:5,sourceType:"habitat",confidence:"medium",
+   note:"Agrar- und Grünlandflächen außerhalb des geschlossenen Zeitzer Forstes."}
 ];
 
-function circlePolygonFeature(area,segments=32){
+function ellipsePolygonFeature(area,segments=40){
   const coords=[];
   const latRad=area.lat*Math.PI/180;
   const kmPerLat=110.574;
   const kmPerLng=Math.max(1,111.320*Math.cos(latRad));
+  const rot=(Number(area.rotation)||0)*Math.PI/180;
 
   for(let i=0;i<=segments;i++){
-    const angle=(Math.PI*2*i)/segments;
-    const lat=area.lat+(Math.sin(angle)*area.radiusKm/kmPerLat);
-    const lng=area.lng+(Math.cos(angle)*area.radiusKm/kmPerLng);
+    const a=(Math.PI*2*i)/segments;
+    const x=Math.cos(a)*(area.rxKm||5);
+    const y=Math.sin(a)*(area.ryKm||5);
+    const xr=x*Math.cos(rot)-y*Math.sin(rot);
+    const yr=x*Math.sin(rot)+y*Math.cos(rot);
+
+    const lat=area.lat+(yr/kmPerLat);
+    const lng=area.lng+(xr/kmPerLng);
     coords.push([lng,lat]);
   }
 
@@ -541,6 +645,15 @@ function circlePolygonFeature(area,segments=32){
   };
 }
 
+const MAMMAL_AREA_COLORS={
+  roe:"#4f9b66",
+  reddeer:"#a95f4b",
+  fallowdeer:"#d59a3e",
+  wildboar:"#755f51",
+  fox:"#c56f3d",
+  hare:"#9a8a52"
+};
+
 function areaVisible(area){
   if(currentFilter==="all"||currentFilter==="mammal"||currentFilter==="potential")return true;
   if(currentFilter===area.filter)return true;
@@ -548,39 +661,65 @@ function areaVisible(area){
 }
 
 function areaStyle(area){
-  const isRotwild=area.species==="Rotwild";
   const official=area.sourceType==="official";
+  const selected=currentFilter===area.filter;
+  const color=MAMMAL_AREA_COLORS[area.filter]||"#718276";
+
   return {
     pane:"habitatAreas",
-    color:isRotwild?"#a95f4b":"#d59a3e",
-    weight:official?2.2:1.7,
-    opacity:official?.85:.7,
-    fillColor:isRotwild?"#a95f4b":"#d59a3e",
-    fillOpacity:currentFilter===area.filter?.23:(official?.15:.09),
-    dashArray:official?null:"7 6"
+    color,
+    weight:selected?2.7:(official?2.0:1.3),
+    opacity:selected?.95:(official?.70:.45),
+    fillColor:color,
+    fillOpacity:selected?.25:(official?.105:.045),
+    dashArray:official?null:"7 7"
   };
 }
 
-function renderRegionalBigGameAreas(){
+let mammalLegendControl=null;
+
+function updateMammalAreaLegend(){
+  if(mammalLegendControl){
+    map.removeControl(mammalLegendControl);
+    mammalLegendControl=null;
+  }
+
+  if(!["all","mammal","potential","roe","reddeer","fallowdeer","wildboar","fox","hare"].includes(currentFilter))return;
+
+  mammalLegendControl=L.control({position:"topright"});
+  mammalLegendControl.onAdd=function(){
+    const div=L.DomUtil.create("div");
+    div.style.cssText="background:rgba(15,26,19,.92);color:#f3f7f4;padding:7px 8px;border-radius:10px;border:1px solid #304938;font:10px system-ui;line-height:1.5;box-shadow:0 3px 12px rgba(0,0,0,.25)";
+    const selected=SPECIES_FILTERS[currentFilter] ? [currentFilter] : ["roe","reddeer","fallowdeer","wildboar","fox","hare"];
+    const labels={roe:"Rehwild",reddeer:"Rotwild",fallowdeer:"Damwild",wildboar:"Wildschwein",fox:"Fuchs",hare:"Feldhase"};
+    div.innerHTML="<b>Potenzialflächen</b><br>"+selected.map(k=>`<span style="color:${MAMMAL_AREA_COLORS[k]}">●</span> ${labels[k]}`).join("<br>")+"<br><span style='opacity:.75'>gestrichelt = Habitat-Prognose</span>";
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  };
+  mammalLegendControl.addTo(map);
+}
+
+function renderRegionalMammalAreas(){
   areaRecords.forEach(layer=>map.removeLayer(layer));
   areaRecords=[];
 
-  for(const area of REGIONAL_BIG_GAME_AREAS){
+  for(const area of REGIONAL_MAMMAL_AREAS){
     if(!areaVisible(area))continue;
 
-    const feature=circlePolygonFeature(area);
+    const feature=ellipsePolygonFeature(area);
     const layer=L.geoJSON(feature,{
       pane:"habitatAreas",
       style:()=>areaStyle(area),
       onEachFeature:(_,polygon)=>{
-        const basis=area.sourceType==="official"?"quellenbasiertes Vorkommensgebiet":"Habitat-/Potenzialprognose";
+        const basis=area.sourceType==="official"?"quellenbasierter regionaler Vorkommenshinweis":"Habitat-/Potenzialprognose";
+        const quality=area.confidence==="high"?"hoch":area.confidence==="medium"?"mittel":"noch prüfen";
         polygon.bindPopup(
           `<div class="popup">
             <h3>${esc(area.species)} · Potenzialfläche</h3>
             <p><b>${esc(area.name)}</b></p>
-            <p>${esc(basis)}</p>
+            <p>${esc(basis)} · Datenqualität: ${esc(quality)}</p>
             <p>${esc(area.note)}</p>
-            <p><small>⚠ Grobe Visualisierung – keine exakte Reviergrenze, Sichtungsposition oder Einstand.</small></p>
+            <p><small>⚠ Grobe Visualisierung – keine exakte Reviergrenze, Sichtungsposition, Ruhezone oder Einstand.</small></p>
           </div>`
         );
       }
@@ -588,10 +727,12 @@ function renderRegionalBigGameAreas(){
 
     areaRecords.push(layer);
   }
+
+  updateMammalAreaLegend();
 }
 
 function renderMarkers(){
-  renderRegionalBigGameAreas();
+  renderRegionalMammalAreas();
   markerRecords.forEach(r=>map.removeLayer(r.marker));markerRecords=[];
   for(const spot of data.spots){
     if(!filterSpot(spot)||!Number.isFinite(spot.lat)||!Number.isFinite(spot.lng))continue;
@@ -888,7 +1029,7 @@ qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:1
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v16-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v17-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
 qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();if(cloudReady){setCloudStatus("syncing","☁ Import-Sync…");await uploadAllToCloud()}alert("Import erfolgreich – Daten wurden mit der Cloud zusammengeführt.")}catch(err){console.error(err);alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}
