@@ -92,15 +92,54 @@
         content: " 🔒";
         font-size: .85em;
       }
-      .guest-mode-hint {
-        flex: 0 0 auto;
-        padding: 7px 10px;
-        border: 1px solid var(--line, #304938);
-        border-radius: 10px;
+      .guest-bottom-bar {
+        position: fixed;
+        z-index: 1450;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        min-height: calc(52px + env(safe-area-inset-bottom));
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: rgba(12,18,14,.97);
+        border-top: 1px solid var(--line, #304938);
+        box-shadow: 0 -8px 24px rgba(0,0,0,.26);
+        color: var(--text, #f3f7f4);
+      }
+      .guest-bottom-copy {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        line-height: 1.25;
         color: var(--muted, #a7b5aa);
-        background: rgba(20,34,25,.72);
-        font-size: 10px;
-        white-space: nowrap;
+      }
+      .guest-bottom-copy strong {
+        color: var(--text, #f3f7f4);
+        font-weight: 800;
+      }
+      .guest-bottom-login {
+        flex: 0 0 auto;
+        border: 0;
+        background: transparent;
+        color: var(--accent, #8ed098);
+        font-weight: 900;
+        font-size: 12px;
+        padding: 8px 2px 8px 8px;
+      }
+      body.guest-readonly-active .bottom-sheet {
+        bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+      }
+      body.guest-readonly-active .leaflet-bottom.leaflet-left {
+        bottom: calc(31vh + 74px) !important;
+      }
+      @media(max-width:420px){
+        .guest-bottom-copy{font-size:10px}
+        .guest-bottom-login{font-size:11px}
       }
     `;
     document.head.appendChild(style);
@@ -130,19 +169,31 @@
         : "Zum Importieren bitte anmelden";
     }
 
-    const actions = document.querySelector(".action-scroll");
-    let hint = document.querySelector("#guestModeHint");
+    let bar = document.querySelector("#guestBottomBar");
 
     if (!registered) {
-      if (!hint && actions) {
-        hint = document.createElement("span");
-        hint.id = "guestModeHint";
-        hint.className = "guest-mode-hint";
-        actions.insertBefore(hint, actions.firstChild);
+      document.body.classList.add("guest-readonly-active");
+
+      if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "guestBottomBar";
+        bar.className = "guest-bottom-bar";
+        bar.innerHTML = `
+          <div class="guest-bottom-copy">
+            <span>🔒</span>
+            <span><strong>Gastmodus</strong> · Lesen erlaubt. Zum Erstellen bitte anmelden.</span>
+          </div>
+          <button type="button" class="guest-bottom-login" id="guestBottomLogin">Anmelden →</button>
+        `;
+        document.body.appendChild(bar);
+
+        bar.querySelector("#guestBottomLogin")?.addEventListener("click", () => {
+          openLogin("Melde dich an, um Spots oder Sichtungen zu erstellen.");
+        });
       }
-      if (hint) hint.textContent = "👤 Gast · Lesen erlaubt · Schreiben nur nach Anmeldung";
     } else {
-      hint?.remove();
+      document.body.classList.remove("guest-readonly-active");
+      bar?.remove();
     }
   }
 

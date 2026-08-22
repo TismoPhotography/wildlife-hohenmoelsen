@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=17;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=18;
 
-const seed={schemaVersion:17,spots:[],sightings:[]};
+const seed={schemaVersion:18,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -676,27 +676,87 @@ function areaStyle(area){
   };
 }
 
-let mammalLegendControl=null;
+function ensureMammalLegendStyles(){
+  if(document.querySelector("#mammal-legend-style"))return;
+  const style=document.createElement("style");
+  style.id="mammal-legend-style";
+  style.textContent=`
+    .mammal-area-legend{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      overflow-x:auto;
+      scrollbar-width:none;
+      padding:7px 9px;
+      border:1px solid var(--line,#304938);
+      border-radius:13px;
+      background:rgba(21,35,26,.94);
+      box-shadow:0 4px 18px rgba(0,0,0,.15);
+      color:var(--text,#f3f7f4);
+      font-size:10px;
+      line-height:1.2;
+      white-space:nowrap;
+    }
+    .mammal-area-legend::-webkit-scrollbar{display:none}
+    .mammal-area-legend-title{
+      flex:0 0 auto;
+      color:var(--muted,#a7b5aa);
+      font-weight:800;
+    }
+    .mammal-area-legend-chip{
+      flex:0 0 auto;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .mammal-area-legend-note{
+      flex:0 0 auto;
+      color:var(--muted,#a7b5aa);
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function updateMammalAreaLegend(){
-  if(mammalLegendControl){
-    map.removeControl(mammalLegendControl);
-    mammalLegendControl=null;
+  ensureMammalLegendStyles();
+
+  const toolbar=document.querySelector(".toolbar");
+  const filters=document.querySelector(".filter-scroll");
+  let legend=document.querySelector("#mammalAreaLegend");
+
+  const supported=["all","mammal","potential","roe","reddeer","fallowdeer","wildboar","fox","hare"];
+  if(!supported.includes(currentFilter)){
+    legend?.remove();
+    return;
   }
 
-  if(!["all","mammal","potential","roe","reddeer","fallowdeer","wildboar","fox","hare"].includes(currentFilter))return;
+  if(!legend&&toolbar&&filters){
+    legend=document.createElement("div");
+    legend.id="mammalAreaLegend";
+    legend.className="mammal-area-legend";
+    filters.insertAdjacentElement("afterend",legend);
+  }
+  if(!legend)return;
 
-  mammalLegendControl=L.control({position:"topright"});
-  mammalLegendControl.onAdd=function(){
-    const div=L.DomUtil.create("div");
-    div.style.cssText="background:rgba(15,26,19,.92);color:#f3f7f4;padding:7px 8px;border-radius:10px;border:1px solid #304938;font:10px system-ui;line-height:1.5;box-shadow:0 3px 12px rgba(0,0,0,.25)";
-    const selected=SPECIES_FILTERS[currentFilter] ? [currentFilter] : ["roe","reddeer","fallowdeer","wildboar","fox","hare"];
-    const labels={roe:"Rehwild",reddeer:"Rotwild",fallowdeer:"Damwild",wildboar:"Wildschwein",fox:"Fuchs",hare:"Feldhase"};
-    div.innerHTML="<b>Potenzialflächen</b><br>"+selected.map(k=>`<span style="color:${MAMMAL_AREA_COLORS[k]}">●</span> ${labels[k]}`).join("<br>")+"<br><span style='opacity:.75'>gestrichelt = Habitat-Prognose</span>";
-    L.DomEvent.disableClickPropagation(div);
-    return div;
+  const selected=SPECIES_FILTERS[currentFilter]
+    ? [currentFilter]
+    : ["roe","reddeer","fallowdeer","wildboar","fox","hare"];
+
+  const labels={
+    roe:"Rehwild",
+    reddeer:"Rotwild",
+    fallowdeer:"Damwild",
+    wildboar:"Wildschwein",
+    fox:"Fuchs",
+    hare:"Feldhase"
   };
-  mammalLegendControl.addTo(map);
+
+  legend.innerHTML=
+    `<span class="mammal-area-legend-title">Potenzialflächen</span>`+
+    selected.map(k=>
+      `<span class="mammal-area-legend-chip"><span style="color:${MAMMAL_AREA_COLORS[k]}">●</span>${labels[k]}</span>`
+    ).join("")+
+    `<span class="mammal-area-legend-note">gestrichelt = Habitat-Prognose</span>`;
 }
 
 function renderRegionalMammalAreas(){
@@ -1029,7 +1089,7 @@ qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:1
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v17-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v18-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
 qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();if(cloudReady){setCloudStatus("syncing","☁ Import-Sync…");await uploadAllToCloud()}alert("Import erfolgreich – Daten wurden mit der Cloud zusammengeführt.")}catch(err){console.error(err);alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}
