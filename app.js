@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=12;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=16;
 
-const seed={schemaVersion:12,spots:[],sightings:[]};
+const seed={schemaVersion:16,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -43,7 +43,7 @@ function loadData(){
   }catch{return structuredClone(seed)}
 }
 function saveData(){data.schemaVersion=SCHEMA_VERSION;localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
-let data=loadData(),currentFilter="all",markerRecords=[],pickerMode=null,pickPreview=null;
+let data=loadData(),currentFilter="all",markerRecords=[],areaRecords=[],pickerMode=null,pickPreview=null;
 
 const firebaseConfig={
   apiKey:"AIzaSyBalKleJYqQhXEE2U_JHPSencqNEwDOCzA",
@@ -402,6 +402,9 @@ function initAuthUiHandlers(){
 
 const map=L.map("map",{zoomControl:true,preferCanvas:true,fadeAnimation:false}).setView([51.135,12.125],14);
 
+map.createPane("habitatAreas");
+map.getPane("habitatAreas").style.zIndex="350";
+
 const street=L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
   subdomains:"abcd",maxZoom:20,detectRetina:true,updateWhenIdle:false,keepBuffer:8,
   attribution:'&copy; OpenStreetMap contributors &copy; CARTO'
@@ -430,9 +433,65 @@ function iconFor(kind,spot=null){
 }
 function previewIcon(){return L.divIcon({className:"pick-preview",html:'<div class="marker-pin confirmed"><span>✚</span></div>',iconSize:[34,34],iconAnchor:[17,32]})}
 function spotHasWater(s){return Boolean(s.waterSource)||s.type==="Wasserstelle"}
+
+const SPECIES_FILTERS={
+  roe:["reh","rehwild"],
+  reddeer:["rotwild","rothirsch"],
+  fallowdeer:["damwild","damhirsch"],
+  hare:["feldhase","hase"],
+  fox:["fuchs","rotfuchs"],
+  wildboar:["wildschwein","schwarzwild"]
+};
+
+function normalizedSpeciesName(v){
+  return String(v||"").trim().toLowerCase();
+}
+function matchesSpeciesFilter(value,filter){
+  const name=normalizedSpeciesName(value);
+  const aliases=SPECIES_FILTERS[filter]||[];
+  return aliases.some(alias=>name===alias||name.includes(alias));
+}
+function spotMatchesSpeciesFilter(spot,filter){
+  return (spot.mammals||[]).some(name=>matchesSpeciesFilter(name,filter));
+}
+function sightingMatchesSpeciesFilter(sighting,filter){
+  return sighting.group==="mammal"&&matchesSpeciesFilter(sighting.species,filter);
+}
+function installSpeciesFilters(){
+  const scroller=document.querySelector(".filter-scroll");
+  if(!scroller||scroller.dataset.speciesFiltersInstalled==="yes")return;
+
+  const mammalBtn=scroller.querySelector('[data-filter="mammal"]');
+  const birdBtn=scroller.querySelector('[data-filter="bird"]');
+
+  const buttons=[
+    ["roe","🦌 Rehwild"],
+    ["reddeer","🦌 Rotwild"],
+    ["fallowdeer","🦌 Damwild"],
+    ["hare","🐇 Feldhase"],
+    ["fox","🦊 Fuchs"],
+    ["wildboar","🐗 Wildschwein"]
+  ];
+
+  if(mammalBtn){
+    for(const [filter,label] of buttons){
+      const btn=document.createElement("button");
+      btn.className="filter";
+      btn.dataset.filter=filter;
+      btn.textContent=label;
+      scroller.insertBefore(btn,mammalBtn);
+    }
+    mammalBtn.textContent="🐾 Säugetiere";
+  }
+
+  if(birdBtn)birdBtn.textContent="🐦 Vögel";
+  scroller.dataset.speciesFiltersInstalled="yes";
+}
+
 function filterSpot(s){
   if(currentFilter==="confirmed")return s.status==="bestätigt";
   if(currentFilter==="potential")return s.status!=="bestätigt";
+  if(SPECIES_FILTERS[currentFilter])return spotMatchesSpeciesFilter(s,currentFilter);
   if(currentFilter==="mammal")return(s.mammals||[]).length>0;
   if(currentFilter==="bird")return(s.birds||[]).length>0;
   if(currentFilter==="water")return spotHasWater(s);
@@ -440,11 +499,99 @@ function filterSpot(s){
   return true;
 }
 function filterSighting(s){
+  if(SPECIES_FILTERS[currentFilter])return sightingMatchesSpeciesFilter(s,currentFilter);
   if(currentFilter==="mammal")return s.group==="mammal";
   if(currentFilter==="bird")return s.group==="bird";
   return currentFilter==="all"||currentFilter==="confirmed";
 }
+
+// v16: Grobe Rotwild-/Damwild-Potenzialflächen.
+// Die Radien visualisieren bewusst nur regionale Beobachtungs-/Habitatbereiche.
+// Sie sind KEINE exakten Reviergrenzen, Einstände oder Tierpositionen.
+const REGIONAL_BIG_GAME_AREAS=[
+  {id:"AREA-RW-ZIEGELRODA",species:"Rotwild",filter:"reddeer",name:"Ziegelrodaer Forst – Rotwild-Großraum",lat:51.335,lng:11.585,radiusKm:8.5,sourceType:"official",confidence:"high",note:"Quellenbasiertes regionales Vorkommensgebiet; Fläche bewusst grob visualisiert."},
+  {id:"AREA-RW-NEBRA",species:"Rotwild",filter:"reddeer",name:"Nebra / Unstruttal – Rotwild-Potenzial",lat:51.275,lng:11.575,radiusKm:6.5,sourceType:"habitat",confidence:"medium",note:"Habitat-/Beobachtungspotenzial im Umfeld des belegten Rotwild-Großraums."},
+  {id:"AREA-RW-ZEITZER",species:"Rotwild",filter:"reddeer",name:"Zeitzer Forst – Rotwild-Habitatpotenzial",lat:50.980,lng:12.085,radiusKm:7.0,sourceType:"habitat",confidence:"review",note:"Habitat-Prognose; keine konkrete Rotwildsichtung an einer bestimmten Stelle wird behauptet."},
+
+  {id:"AREA-DW-FINNE",species:"Damwild",filter:"fallowdeer",name:"Finne – Damwild-Großraum",lat:51.235,lng:11.565,radiusKm:10.0,sourceType:"official",confidence:"high",note:"Quellenbasierter regionaler Damwild-Großraum; visualisierte Fläche ist keine exakte Bestandsgrenze."},
+  {id:"AREA-DW-FREYBURG",species:"Damwild",filter:"fallowdeer",name:"Freyburg / Möllern – Damwild-Großraum",lat:51.215,lng:11.735,radiusKm:6.5,sourceType:"official",confidence:"high",note:"Regional belegter Damwild-Großraum."},
+  {id:"AREA-DW-STEINBURG",species:"Damwild",filter:"fallowdeer",name:"Steinburg / Eckartsberga – Damwild-Großraum",lat:51.145,lng:11.555,radiusKm:7.0,sourceType:"official",confidence:"high",note:"Regional belegter Damwild-Großraum; keine exakte Tierposition."},
+  {id:"AREA-DW-BILLRODA",species:"Damwild",filter:"fallowdeer",name:"Billroda – Damwild-Großraum",lat:51.205,lng:11.455,radiusKm:5.5,sourceType:"official",confidence:"high",note:"Regional belegter Damwild-Großraum."},
+  {id:"AREA-DW-LOSSA",species:"Damwild",filter:"fallowdeer",name:"Lossa / Finne – Damwild-Potenzial",lat:51.220,lng:11.420,radiusKm:5.0,sourceType:"habitat",confidence:"medium",note:"Regionaler Hinweis-/Habitatraum; keine bestätigte Einzelsichtung am Flächenzentrum."},
+  {id:"AREA-DW-PRIESSNITZ",species:"Damwild",filter:"fallowdeer",name:"Prießnitz / Saale-Unstrut – Damwild-Potenzial",lat:51.115,lng:11.780,radiusKm:5.5,sourceType:"habitat",confidence:"medium",note:"Regionaler Hinweis-/Habitatraum; bewusst grobe Potenzialfläche."}
+];
+
+function circlePolygonFeature(area,segments=32){
+  const coords=[];
+  const latRad=area.lat*Math.PI/180;
+  const kmPerLat=110.574;
+  const kmPerLng=Math.max(1,111.320*Math.cos(latRad));
+
+  for(let i=0;i<=segments;i++){
+    const angle=(Math.PI*2*i)/segments;
+    const lat=area.lat+(Math.sin(angle)*area.radiusKm/kmPerLat);
+    const lng=area.lng+(Math.cos(angle)*area.radiusKm/kmPerLng);
+    coords.push([lng,lat]);
+  }
+
+  return {
+    type:"Feature",
+    properties:{...area},
+    geometry:{type:"Polygon",coordinates:[coords]}
+  };
+}
+
+function areaVisible(area){
+  if(currentFilter==="all"||currentFilter==="mammal"||currentFilter==="potential")return true;
+  if(currentFilter===area.filter)return true;
+  return false;
+}
+
+function areaStyle(area){
+  const isRotwild=area.species==="Rotwild";
+  const official=area.sourceType==="official";
+  return {
+    pane:"habitatAreas",
+    color:isRotwild?"#a95f4b":"#d59a3e",
+    weight:official?2.2:1.7,
+    opacity:official?.85:.7,
+    fillColor:isRotwild?"#a95f4b":"#d59a3e",
+    fillOpacity:currentFilter===area.filter?.23:(official?.15:.09),
+    dashArray:official?null:"7 6"
+  };
+}
+
+function renderRegionalBigGameAreas(){
+  areaRecords.forEach(layer=>map.removeLayer(layer));
+  areaRecords=[];
+
+  for(const area of REGIONAL_BIG_GAME_AREAS){
+    if(!areaVisible(area))continue;
+
+    const feature=circlePolygonFeature(area);
+    const layer=L.geoJSON(feature,{
+      pane:"habitatAreas",
+      style:()=>areaStyle(area),
+      onEachFeature:(_,polygon)=>{
+        const basis=area.sourceType==="official"?"quellenbasiertes Vorkommensgebiet":"Habitat-/Potenzialprognose";
+        polygon.bindPopup(
+          `<div class="popup">
+            <h3>${esc(area.species)} · Potenzialfläche</h3>
+            <p><b>${esc(area.name)}</b></p>
+            <p>${esc(basis)}</p>
+            <p>${esc(area.note)}</p>
+            <p><small>⚠ Grobe Visualisierung – keine exakte Reviergrenze, Sichtungsposition oder Einstand.</small></p>
+          </div>`
+        );
+      }
+    }).addTo(map);
+
+    areaRecords.push(layer);
+  }
+}
+
 function renderMarkers(){
+  renderRegionalBigGameAreas();
   markerRecords.forEach(r=>map.removeLayer(r.marker));markerRecords=[];
   for(const spot of data.spots){
     if(!filterSpot(spot)||!Number.isFinite(spot.lat)||!Number.isFinite(spot.lng))continue;
@@ -495,6 +642,8 @@ window.openSpotPanel=function(id){
   qs("#spotPanel").classList.remove("hidden")
 };
 qs("#closePanelBtn").addEventListener("click",()=>qs("#spotPanel").classList.add("hidden"));
+
+installSpeciesFilters();
 
 document.querySelectorAll(".filter").forEach(btn=>btn.addEventListener("click",()=>{
   document.querySelectorAll(".filter").forEach(b=>b.classList.remove("active"));btn.classList.add("active");currentFilter=btn.dataset.filter;renderMarkers()
@@ -739,7 +888,7 @@ qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:1
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v12-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v16-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
 qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();if(cloudReady){setCloudStatus("syncing","☁ Import-Sync…");await uploadAllToCloud()}alert("Import erfolgreich – Daten wurden mit der Cloud zusammengeführt.")}catch(err){console.error(err);alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}
@@ -748,6 +897,8 @@ function qs(s){return document.querySelector(s)}
 
 
 const SPECIES_PROFILES=[
+  {name:"Rotwild",icon:"🦌",group:"mammal",hours:[[4,9],[17,24]],habitats:["WFK","DW","BR","WI"],water:true,season:"Ganzjährig; besonders interessant im Herbst",food:"Gräser, Kräuter, Blätter, Triebe, Rinde, Feldfrüchte",note:"Große Wald-Offenland-Komplexe; Potenzialflächen in der Karte sind bewusst grob und keine Einstände."},
+  {name:"Damwild",icon:"🦌",group:"mammal",hours:[[4,10],[16,24]],habitats:["WFK","DW","BR","WI","AF"],water:true,season:"Ganzjährig; Brunft im Herbst",food:"Gräser, Kräuter, Blätter, Knospen, Früchte, Feldfrüchte",note:"Strukturreiche Wald-Offenland-Landschaften; Potenzialflächen zeigen nur Großräume."},
   {name:"Reh",icon:"🦌",group:"mammal",hours:[[4,8],[18,24]],habitats:["WFK","WI","HG","BR"],water:false,season:"Ganzjährig",food:"Gräser, Kräuter, Knospen, Blätter, Feldfrüchte",note:"Schwerpunkt meist Dämmerung; Störung und Jahreszeit verschieben Aktivität."},
   {name:"Wildschwein",icon:"🐗",group:"mammal",hours:[[19,24],[0,6]],habitats:["DW","BR","GW","AF"],water:true,season:"Ganzjährig",food:"Wurzeln, Früchte, Eicheln, Feldfrüchte, Wirbellose",note:"Überwiegend dämmerungs-/nachtaktiv; Suhlen und Deckung sind relevant."},
   {name:"Fuchs",icon:"🦊",group:"mammal",hours:[[19,24],[0,7]],habitats:["WFK","HG","AF","BR"],water:false,season:"Ganzjährig",food:"Kleinsäuger, Vögel, Wirbellose, Früchte",note:"Oft in Dämmerung und Nacht; auch tagsüber möglich."},
@@ -774,7 +925,7 @@ function qualityLabel(v){
   return'<span class="quality-warn">≈ grobe Zone</span>';
 }
 function sourceLabel(v){
-  return v==="own"?"Eigene Beobachtung":v==="official"?"Amtliche/Fachquelle":"Habitat-Prognose";
+  return v==="own"?"Eigene Beobachtung":v==="official"?"Quellenbasiertes Vorkommensgebiet":"Habitat-/Potenzialprognose";
 }
 function timeMatches(profile,hour){return profile.hours.some(([a,b])=>hour>=a&&hour<b)}
 function spotSpecies(spot){
