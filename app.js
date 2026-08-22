@@ -1,6 +1,6 @@
-const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=18;
+const STORAGE_KEY="wildlife-hohenmoelsen-v1",SCHEMA_VERSION=19;
 
-const seed={schemaVersion:18,spots:[],sightings:[]};
+const seed={schemaVersion:19,spots:[],sightings:[]};
 
 function migrateData(raw){
   const base=raw&&typeof raw==="object"?raw:{...seed};
@@ -1089,7 +1089,7 @@ qs("#locateBtn").addEventListener("click",()=>map.locate({setView:true,maxZoom:1
 map.on("locationfound",e=>L.circleMarker(e.latlng,{radius:7,weight:3,color:"#fff",fillColor:"#3d80c1",fillOpacity:1}).addTo(map).bindPopup("Dein Standort").openPopup());
 map.on("locationerror",()=>alert("Standort konnte nicht ermittelt werden. Bitte Browser-Berechtigung prüfen."));
 
-qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-hohenmoelsen-v18-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
+qs("#exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`wildlife-burgenlandkreis-v19-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)});
 qs("#importInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.spots)||!Array.isArray(parsed.sightings))throw new Error();data=migrateData(parsed);saveData();renderMarkers();updateSpotSelect();if(cloudReady){setCloudStatus("syncing","☁ Import-Sync…");await uploadAllToCloud()}alert("Import erfolgreich – Daten wurden mit der Cloud zusammengeführt.")}catch(err){console.error(err);alert("Die Datei konnte nicht importiert werden.")}finally{e.target.value=""}});
 
 function split(v){return String(v||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}

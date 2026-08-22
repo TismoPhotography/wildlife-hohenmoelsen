@@ -4,8 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#15261b" />
+  <meta name="description" content="Wildlife Burgenlandkreis – Wildtier-Sichtungen, Fotospots und Potenzialflächen. Geschlossene Beta/Testversion." />
+  <meta name="application-name" content="Wildlife Burgenlandkreis" />
+  <meta name="apple-mobile-web-app-title" content="Wildlife BLK" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>Wildlife Hohenmölsen</title>
+  <title>Wildlife Burgenlandkreis · Beta</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="styles.css?v=14">
@@ -13,8 +17,8 @@
 <body>
   <header class="topbar">
     <div>
-      <div class="eyebrow">Wildlife Hohenmölsen · v18.1</div>
-      <h1>Säugetiere & Brutvögel</h1>
+      <div class="eyebrow">Wildlife Burgenlandkreis · BETA · v19</div>
+      <h1>Wildtier-Sichtungen & Fotospots</h1>
     </div>
     <div class="top-actions"><button id="accountBtn" class="account-btn" title="Konto">👤 Gast</button><button id="locateBtn" class="icon-btn" title="Meinen Standort anzeigen">◎</button></div>
   </header>
@@ -274,9 +278,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="app.js?v=181"></script>
-  <script src="admin.js?v=181"></script>
-  <script src="access.js?v=181"></script>
+  <script src="app.js?v=19"></script>
+  <script src="admin.js?v=19"></script>
+  <script src="access.js?v=19"></script>
 
   <script>
     (() => {
@@ -300,6 +304,11 @@
         }
       });
     })();
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=19").catch(err=>console.warn("Service Worker:",err)));
+    }
   </script>
 </body>
 </html>
